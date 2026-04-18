@@ -1,6 +1,9 @@
 using System;
 using System.IO;
 using System.Linq;
+using System.Collections.Generic;
+using System.Text.Json;
+using Tomlyn;
 using ArchDiver.Core;
 using ArchDiver.Core.Infrastructure;
 using ArchDiver.Core.Models;
@@ -12,6 +15,9 @@ namespace ArchDiver.Cli
 {
     class Program
     {
+        private static int _maxDepth = 10;
+        private static string _outputDir = ".archdiver/out";
+
         static void Main(string[] args)
         {
             // Initialize the microkernel
@@ -27,11 +33,8 @@ namespace ArchDiver.Cli
 
             switch (command)
             {
-                case "parse":
-                    HandleParse(args);
-                    break;
-                case "query":
-                    HandleQuery(args);
+                case "explore":
+                    HandleExplore(args);
                     break;
                 case "help":
                 default:
@@ -44,132 +47,147 @@ namespace ArchDiver.Cli
         {
             Console.WriteLine("ArchDiver CLI");
             Console.WriteLine("Usage:");
-            Console.WriteLine("  archdiver parse <file_path> [--lang <language>] [--raw]");
-            Console.WriteLine("  archdiver query <file_path> <query_string> [--lang <language>]");
+            Console.WriteLine("  archdiver explore <directory_path> [--max-depth <n>]");
             Console.WriteLine();
             Console.WriteLine("Commands:");
-            Console.WriteLine("  parse    Parses a file and prints the AST structure.");
-            Console.WriteLine("  query    Executes a Tree-sitter query against a file.");
+            Console.WriteLine("  explore  Recursively parses all supported files in a directory.");
             Console.WriteLine();
             Console.WriteLine($"Supported Languages: {string.Join(", ", LanguageRegistry.GetSupportedLanguages())}");
         }
 
-        static void HandleParse(string[] args)
+        static void HandleExplore(string[] args)
         {
             if (args.Length < 2)
             {
-                Console.WriteLine("Error: Missing file path.");
+                Console.WriteLine("Error: Missing directory path.");
                 return;
             }
 
-            string filePath = args[1];
-            bool raw = args.Contains("--raw");
-
-            if (!File.Exists(filePath))
+            string rootPath = Path.GetFullPath(args[1]);
+            if (!Directory.Exists(rootPath))
             {
-                Console.WriteLine($"Error: File not found: {filePath}");
+                Console.WriteLine($"Error: Directory not found: {rootPath}");
                 return;
             }
 
-            try
-            {
-                string sourceCode = File.ReadAllText(filePath);
-                var provider = ResolveProvider(filePath, sourceCode, args);
-                var codeParser = new CodeParser(provider);
-
-                if (raw)
-                {
-                    using var parser = new Parser(codeParser.Language);
-                    using var tree = parser.Parse(sourceCode);
-                    Console.WriteLine($"Successfully parsed {filePath} ({provider.LanguageId}) [RAW]");
-                    PrintRawNode(tree.RootNode, 0);
-                }
-                else
-                {
-                    var ast = codeParser.Parse(sourceCode);
-                    Console.WriteLine($"Successfully parsed {filePath} ({provider.LanguageId})");
-                    Console.WriteLine("AST Structure:");
-                    PrintNode(ast, 0);
-                }
-            }
-            catch (Exception ex)
-            {
-                Console.WriteLine($"Error parsing file: {ex.Message}");
-            }
-        }
-
-        static void HandleQuery(string[] args)
-        {
-            if (args.Length < 3)
-            {
-                Console.WriteLine("Error: Missing file path or query string.");
-                return;
-            }
-
-            string filePath = args[1];
-            string queryString = args[2];
-
-            if (!File.Exists(filePath))
-            {
-                Console.WriteLine($"Error: File not found: {filePath}");
-                return;
-            }
-
-            try
-            {
-                string sourceCode = File.ReadAllText(filePath);
-                var providerInfo = ResolveProvider(filePath, sourceCode, args);
-                var codeParser = new CodeParser(providerInfo);
-
-                using var parser = new Parser(codeParser.Language);
-                using var tree = parser.Parse(sourceCode);
-                using var query = new Query(codeParser.Language, queryString);
-                using var cursor = new QueryCursor();
-
-                cursor.Execute(query, tree.RootNode);
-
-                Console.WriteLine($"Query results for {filePath} ({providerInfo.LanguageId}):");
-                int matchCount = 0;
-                foreach (var match in cursor.Matches)
-                {
-                    matchCount++;
-                    Console.WriteLine($"Match {matchCount}:");
-                    foreach (var capture in match.Captures)
-                    {
-                        Console.WriteLine($"  - {capture.Name}: {capture.Node.Type} [{capture.Node.StartPosition.Row}:{capture.Node.StartPosition.Column}]");
-                        Console.WriteLine($"    Text: \"{capture.Node.Text}\"");
-                    }
-                }
-
-                if (matchCount == 0)
-                {
-                    Console.WriteLine("No matches found.");
-                }
-            }
-            catch (Exception ex)
-            {
-                Console.WriteLine($"Error executing query: {ex.Message}");
-            }
-        }
-
-        static ILanguageProvider ResolveProvider(string filePath, string content, string[] args)
-        {
-            // 1. Check for explicit --lang override
+            // Parse max-depth
             for (int i = 0; i < args.Length; i++)
             {
-                if (args[i] == "--lang" && i + 1 < args.Length)
+                if (args[i] == "--max-depth" && i + 1 < args.Length && int.TryParse(args[i + 1], out int depth))
                 {
-                    string langId = args[i + 1];
-                    return LanguageRegistry.GetById(langId)
-                           ?? throw new Exception($"Language '{langId}' is not registered.");
+                    _maxDepth = depth;
                 }
             }
 
-            // 2. Autonomous identification
-            var provider = LanguageRegistry.Identify(filePath, content);
-            if (provider != null) return provider;
+            Console.WriteLine($"Exploring directory: {rootPath} (Max Depth: {_maxDepth})");
 
-            throw new Exception($"Could not automatically identify language for file '{filePath}'. Use --lang to specify manually.");
+            string outputRoot = Path.Combine(rootPath, _outputDir);
+            if (Directory.Exists(outputRoot))
+            {
+                Directory.Delete(outputRoot, true);
+            }
+            Directory.CreateDirectory(outputRoot);
+
+            ExploreDirectory(rootPath, rootPath, outputRoot, 0);
+
+            Console.WriteLine($"Exploration complete. Results saved in {outputRoot}");
+        }
+
+        static void ExploreDirectory(string rootPath, string currentPath, string outputRoot, int depth)
+        {
+            if (depth > _maxDepth) return;
+
+            // Skip output directory
+            if (currentPath.Replace("\\", "/").Contains("/.archdiver/out")) return;
+
+            try
+            {
+                foreach (var file in Directory.GetFiles(currentPath))
+                {
+                    ProcessFile(rootPath, file, outputRoot);
+                }
+
+                foreach (var dir in Directory.GetDirectories(currentPath))
+                {
+                    ExploreDirectory(rootPath, dir, outputRoot, depth + 1);
+                }
+            }
+            catch (Exception ex)
+            {
+                Console.WriteLine($"Warning: Failed to access {currentPath}: {ex.Message}");
+            }
+        }
+
+        static void ProcessFile(string rootPath, string filePath, string outputRoot)
+        {
+            try
+            {
+                string sourceCode = File.ReadAllText(filePath);
+                var provider = LanguageRegistry.Identify(filePath, sourceCode);
+
+                if (provider == null) return; // Skip unsupported files
+
+                Console.WriteLine($"Parsing: {Path.GetRelativePath(rootPath, filePath)} ({provider.LanguageId})");
+
+                var codeParser = new CodeParser(provider);
+                var ast = codeParser.Parse(sourceCode);
+
+                string relativePath = Path.GetRelativePath(rootPath, filePath);
+                string outputPath = Path.Combine(outputRoot, relativePath + ".toml");
+
+                Directory.CreateDirectory(Path.GetDirectoryName(outputPath)!);
+
+                var options = new TomlSerializerOptions
+                {
+                    WriteIndented = true,
+                    IndentSize = 4,
+                    PropertyNamingPolicy = JsonNamingPolicy.SnakeCaseLower
+                };
+
+                var tomlModel = ToTomlModel(ast);
+                string toml = TomlSerializer.Serialize(tomlModel, options);
+
+                File.WriteAllText(outputPath, toml);
+            }
+            catch (Exception ex)
+            {
+                Console.WriteLine($"Error processing {filePath}: {ex.Message}");
+            }
+        }
+
+        static Tomlyn.Model.TomlTable ToTomlModel(AstNode node)
+        {
+            var table = new Tomlyn.Model.TomlTable();
+            table["type"] = node.Type;
+            table["text"] = node.Text;
+
+            var rangeTable = new Tomlyn.Model.TomlTable();
+
+            var startTable = new Tomlyn.Model.TomlTable();
+            startTable["line"] = node.Range.Start.Line;
+            startTable["column"] = node.Range.Start.Column;
+            startTable["offset"] = node.Range.Start.Offset;
+            rangeTable["start"] = startTable;
+
+            var endTable = new Tomlyn.Model.TomlTable();
+            endTable["line"] = node.Range.End.Line;
+            endTable["column"] = node.Range.End.Column;
+            endTable["offset"] = node.Range.End.Offset;
+            rangeTable["end"] = endTable;
+
+            table["range"] = rangeTable;
+
+            if (node.Children.Count > 0)
+            {
+                var childrenArray = new Tomlyn.Model.TomlTableArray();
+                foreach (var child in node.Children)
+                {
+                    childrenArray.Add(ToTomlModel(child));
+                }
+                table["children"] = childrenArray;
+            }
+
+            return table;
         }
 
         static void PrintNode(AstNode node, int indent)
