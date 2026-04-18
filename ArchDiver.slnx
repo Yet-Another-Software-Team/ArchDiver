@@ -1,0 +1,5 @@
+<Solution>
+  <Project Path="src/ArchDiver.Core/ArchDiver.Core.csproj" />
+  <Project Path="src/ArchDiver.Cli/ArchDiver.Cli.csproj" />
+  <Project Path="src/ArchDiver.Tests/ArchDiver.Tests.csproj" />
+</Solution>
