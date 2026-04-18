@@ -1,7 +1,8 @@
 using System;
 using System.Collections.Generic;
+using ArchDiver.Core.Models;
 
-namespace ArchDiver.Core
+namespace ArchDiver.Core.Storage
 {
     /// <summary>
     /// Serves as the centralized storage for maintaining state, parsed data,

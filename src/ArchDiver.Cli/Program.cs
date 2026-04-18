@@ -2,6 +2,10 @@ using System;
 using System.IO;
 using System.Linq;
 using ArchDiver.Core;
+using ArchDiver.Core.Infrastructure;
+using ArchDiver.Core.Models;
+using ArchDiver.Core.Parsing;
+using ArchDiver.Core.Abstractions;
 using TreeSitter;
 
 namespace ArchDiver.Cli
@@ -10,6 +14,9 @@ namespace ArchDiver.Cli
     {
         static void Main(string[] args)
         {
+            // Initialize the microkernel
+            Bootstrapper.Initialize();
+
             if (args.Length < 1)
             {
                 PrintUsage();
@@ -37,12 +44,14 @@ namespace ArchDiver.Cli
         {
             Console.WriteLine("ArchDiver CLI");
             Console.WriteLine("Usage:");
-            Console.WriteLine("  archdiver parse <file_path> [--lang <language>]");
+            Console.WriteLine("  archdiver parse <file_path> [--lang <language>] [--raw]");
             Console.WriteLine("  archdiver query <file_path> <query_string> [--lang <language>]");
             Console.WriteLine();
             Console.WriteLine("Commands:");
             Console.WriteLine("  parse    Parses a file and prints the AST structure.");
             Console.WriteLine("  query    Executes a Tree-sitter query against a file.");
+            Console.WriteLine();
+            Console.WriteLine($"Supported Languages: {string.Join(", ", LanguageRegistry.GetSupportedLanguages())}");
         }
 
         static void HandleParse(string[] args)
@@ -54,7 +63,6 @@ namespace ArchDiver.Cli
             }
 
             string filePath = args[1];
-            string language = GetLanguageArg(args);
             bool raw = args.Contains("--raw");
 
             if (!File.Exists(filePath))
@@ -66,19 +74,20 @@ namespace ArchDiver.Cli
             try
             {
                 string sourceCode = File.ReadAllText(filePath);
-                var codeParser = new CodeParser(language);
+                var provider = ResolveProvider(filePath, sourceCode, args);
+                var codeParser = new CodeParser(provider);
 
                 if (raw)
                 {
                     using var parser = new Parser(codeParser.Language);
                     using var tree = parser.Parse(sourceCode);
-                    Console.WriteLine($"Successfully parsed {filePath} ({language}) [RAW]");
+                    Console.WriteLine($"Successfully parsed {filePath} ({provider.LanguageId}) [RAW]");
                     PrintRawNode(tree.RootNode, 0);
                 }
                 else
                 {
                     var ast = codeParser.Parse(sourceCode);
-                    Console.WriteLine($"Successfully parsed {filePath} ({language})");
+                    Console.WriteLine($"Successfully parsed {filePath} ({provider.LanguageId})");
                     Console.WriteLine("AST Structure:");
                     PrintNode(ast, 0);
                 }
@@ -99,7 +108,6 @@ namespace ArchDiver.Cli
 
             string filePath = args[1];
             string queryString = args[2];
-            string languageName = GetLanguageArg(args);
 
             if (!File.Exists(filePath))
             {
@@ -110,7 +118,8 @@ namespace ArchDiver.Cli
             try
             {
                 string sourceCode = File.ReadAllText(filePath);
-                var codeParser = new CodeParser(languageName);
+                var providerInfo = ResolveProvider(filePath, sourceCode, args);
+                var codeParser = new CodeParser(providerInfo);
 
                 using var parser = new Parser(codeParser.Language);
                 using var tree = parser.Parse(sourceCode);
@@ -119,7 +128,7 @@ namespace ArchDiver.Cli
 
                 cursor.Execute(query, tree.RootNode);
 
-                Console.WriteLine($"Query results for {filePath}:");
+                Console.WriteLine($"Query results for {filePath} ({providerInfo.LanguageId}):");
                 int matchCount = 0;
                 foreach (var match in cursor.Matches)
                 {
@@ -143,23 +152,29 @@ namespace ArchDiver.Cli
             }
         }
 
-        static string GetLanguageArg(string[] args)
+        static ILanguageProvider ResolveProvider(string filePath, string content, string[] args)
         {
+            // 1. Check for explicit --lang override
             for (int i = 0; i < args.Length; i++)
             {
                 if (args[i] == "--lang" && i + 1 < args.Length)
                 {
-                    return args[i + 1];
+                    string langId = args[i + 1];
+                    return LanguageRegistry.GetById(langId)
+                           ?? throw new Exception($"Language '{langId}' is not registered.");
                 }
             }
-            return "CSharp";
+
+            // 2. Autonomous identification
+            var provider = LanguageRegistry.Identify(filePath, content);
+            if (provider != null) return provider;
+
+            throw new Exception($"Could not automatically identify language for file '{filePath}'. Use --lang to specify manually.");
         }
 
         static void PrintNode(AstNode node, int indent)
         {
             string indentation = new string(' ', indent * 2);
-            // We don't currently store field names in AstNode, but we can see them via the parse command if we had them.
-            // Let's modify HandleParse to use a raw TreeSitter walk to show fields for debugging.
             Console.WriteLine($"{indentation}- {node.Type} [{node.Range.Start.Line}:{node.Range.Start.Column} - {node.Range.End.Line}:{node.Range.End.Column}]");
 
             if (!string.IsNullOrWhiteSpace(node.Text) && node.Children.Count == 0)
@@ -178,7 +193,18 @@ namespace ArchDiver.Cli
         static void PrintRawNode(Node node, int indent)
         {
             string indentation = new string(' ', indent * 2);
-            string fieldName = node.Parent?.GetFieldNameForChild(node.Parent.Children.ToList().IndexOf(node)) ?? "";
+            string? fieldName = null;
+
+            if (node.Parent != null)
+            {
+                var siblings = node.Parent.Children.ToList();
+                int index = siblings.IndexOf(node);
+                if (index != -1)
+                {
+                    fieldName = node.Parent.GetFieldNameForChild(index);
+                }
+            }
+
             string fieldPrefix = !string.IsNullOrEmpty(fieldName) ? $"{fieldName}: " : "";
 
             Console.WriteLine($"{indentation}- {fieldPrefix}{node.Type} [{node.StartPosition.Row}:{node.StartPosition.Column}]");
@@ -187,5 +213,6 @@ namespace ArchDiver.Cli
             {
                 PrintRawNode(child, indent + 1);
             }
-        }    }
+        }
+    }
 }

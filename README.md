@@ -4,24 +4,24 @@ ArchDiver is a high-performance software architecture analysis tool designed to 
 
 ## 🚀 Features
 
-- **Multi-Language Parsing**: Powered by Tree-sitter for fast, incremental, and accurate Abstract Syntax Tree (AST) generation.
-- **Rich AST Model**: Captures precise source ranges, parent-child relationships, and metadata essential for architectural mapping.
+- **Multi-Language Parsing**: Powered by Tree-sitter. ArchDiver uses a **microkernel architecture** where each language is implemented as an independent provider.
+- **Automatic Language Detection**: CLI automatically detects the language based on file extension.
+- **Rich AST Model**: Captures precise source ranges, parent-child relationships, and metadata.
 - **Native Query Support**: Execute Tree-sitter S-expression queries directly against source files via CLI.
-- **Extensible Pipeline**: Orchestrated by a central Control Unit, allowing for modular analysis stages.
 
 ## 🛠 Project Structure
 
-- `src/ArchDiver.Core`: The engine room. Contains the parser, context storage, and pipeline orchestration.
-- `src/ArchDiver.Cli`: Command-line interface for interactive AST inspection and querying.
-- `src/ArchDiver.Tests`: Comprehensive validation suite ensuring parsing accuracy.
-- `ArchDiver.slnx`: Modern XML-based solution file.
+- `src/ArchDiver.Core`: The kernel. Contains the registry, bootstrapper, and base AST model.
+- `src/ArchDiver.Core/Languages`: Language-specific providers (e.g., `CSharpLanguageProvider.cs`).
+- `src/ArchDiver.Cli`: Command-line interface with automatic language detection.
+- `src/ArchDiver.Tests`: Validation suite.
 
 ## 🏁 Getting Started
 
 ### Prerequisites
 
 - [.NET 10.0 SDK](https://dotnet.microsoft.com/download/dotnet/10.0)
-- Windows (Native Tree-sitter binaries included for win-x64, win-arm64, win-x86).
+- Windows (Native Tree-sitter binaries included).
 
 ### Build & Test
 
@@ -35,24 +35,32 @@ dotnet test ArchDiver.slnx
 
 ## 💻 CLI Usage
 
-The ArchDiver CLI allows you to inspect the structure of your code and run powerful queries.
+The ArchDiver CLI automatically detects the language based on the file extension.
 
 ### Parse and Inspect AST
-To visualize the full tree structure of a file:
 ```powershell
-dotnet run --project src/ArchDiver.Cli -- parse <file_path> [--lang <language>]
+dotnet run --project src/ArchDiver.Cli -- parse <file_path> [--raw]
 ```
+Use `--raw` to see native Tree-sitter field names (useful for writing queries).
 
 ### Execute Tree-sitter Queries
-To find specific patterns using S-expressions:
 ```powershell
-dotnet run --project src/ArchDiver.Cli -- query <file_path> "<query_string>" [--lang <language>]
+dotnet run --project src/ArchDiver.Cli -- query <file_path> "<query_string>"
 ```
-**Example**: Find all property names in a C# file:
+**Example**: Find all property names in a C# file (no `--lang` needed):
 ```powershell
 dotnet run --project src/ArchDiver.Cli -- query src/ArchDiver.Core/CodeParser.cs "(property_declaration name: (identifier) @name)"
 ```
 
+
+## 🌍 Supported Languages
+
+ArchDiver currently supports the following languages out-of-the-box:
+- **C#** (`.cs`)
+- **Python** (`.py`)
+- **Java** (`.java`)
+
+More languages (Go, JavaScript, C++, etc.) can be easily added by implementing a new `ILanguageProvider`.
 
 ## 📄 License
 

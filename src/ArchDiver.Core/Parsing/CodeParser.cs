@@ -2,41 +2,11 @@ using System;
 using System.Collections.Generic;
 using System.Linq;
 using TreeSitter;
+using ArchDiver.Core.Abstractions;
+using ArchDiver.Core.Models;
 
-namespace ArchDiver.Core
+namespace ArchDiver.Core.Parsing
 {
-    /// <summary>
-    /// Represents a specific point in the source code.
-    /// </summary>
-    public record struct SourcePoint(int Line, int Column, int Offset);
-
-    /// <summary>
-    /// Represents a range within the source code.
-    /// </summary>
-    public record struct SourceRange(SourcePoint Start, SourcePoint End);
-
-    /// <summary>
-    /// Represents a generic node in the Abstract Syntax Tree (AST).
-    /// </summary>
-    public class AstNode
-    {
-        public string Type { get; set; } = string.Empty;
-        public string Text { get; set; } = string.Empty;
-        public SourceRange Range { get; set; }
-        public AstNode? Parent { get; set; }
-        public List<AstNode> Children { get; set; } = new List<AstNode>();
-
-        /// <summary>
-        /// Adds a child node and sets its parent reference.
-        /// </summary>
-        public void AddChild(AstNode child)
-        {
-            if (child == null) throw new ArgumentNullException(nameof(child));
-            child.Parent = this;
-            Children.Add(child);
-        }
-    }
-
     /// <summary>
     /// A parser binding using Tree-sitter.
     /// </summary>
@@ -45,23 +15,17 @@ namespace ArchDiver.Core
         public Language Language => _language;
         private readonly Language _language;
 
-        public CodeParser(string languageName = "CSharp")
+        public CodeParser(ILanguageProvider provider)
         {
+            if (provider == null) throw new ArgumentNullException(nameof(provider));
+
             try
             {
-                if (languageName == "CSharp")
-                {
-                    // Explicitly use the library name and function name that actually exist
-                    _language = new Language("tree-sitter-c-sharp.dll", "tree_sitter_c_sharp");
-                }
-                else
-                {
-                    _language = new Language(languageName);
-                }
+                _language = new Language(provider.LibraryName, provider.FunctionName);
             }
             catch (Exception ex)
             {
-                throw new InvalidOperationException($"Failed to initialize Tree-sitter language '{languageName}'.", ex);
+                throw new InvalidOperationException($"Failed to load Tree-sitter native library for {provider.LanguageId}.", ex);
             }
         }
 
