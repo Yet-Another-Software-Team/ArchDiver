@@ -8,6 +8,7 @@ ArchDiver is a high-performance software architecture analysis tool designed to 
 - **Automatic Language Detection**: CLI automatically detects the language based on file extension.
 - **Rich AST Model**: Captures precise source ranges, parent-child relationships, and metadata.
 - **Native Query Support**: Execute Tree-sitter S-expression queries directly against source files via CLI.
+- **Cross-Platform**: Built on .NET 10.0, ArchDiver runs on **Windows, Linux, and macOS**.
 
 ## 🛠 Project Structure
 
@@ -21,7 +22,6 @@ ArchDiver is a high-performance software architecture analysis tool designed to 
 ### Prerequisites
 
 - [.NET 10.0 SDK](https://dotnet.microsoft.com/download/dotnet/10.0)
-- Windows (Native Tree-sitter binaries included).
 
 ### Build & Test
 

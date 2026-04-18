@@ -8,7 +8,7 @@ namespace ArchDiver.Core.Languages
     public class PythonLanguageProvider : ILanguageProvider
     {
         public string LanguageId => "Python";
-        public string LibraryName => "tree-sitter-python.dll";
+        public string BaseLibraryName => "tree-sitter-python";
         public string FunctionName => "tree_sitter_python";
 
         private static readonly string[] _extensions = { ".py" };

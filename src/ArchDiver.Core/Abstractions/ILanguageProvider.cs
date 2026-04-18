@@ -11,9 +11,9 @@ namespace ArchDiver.Core.Abstractions
         string LanguageId { get; }
 
         /// <summary>
-        /// The name of the native Tree-sitter library file.
+        /// The base name of the native Tree-sitter library (without prefix or extension).
         /// </summary>
-        string LibraryName { get; }
+        string BaseLibraryName { get; }
 
         /// <summary>
         /// The name of the exported C function that returns the TSLanguage pointer.

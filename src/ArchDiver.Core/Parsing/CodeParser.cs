@@ -21,7 +21,8 @@ namespace ArchDiver.Core.Parsing
 
             try
             {
-                _language = new Language(provider.LibraryName, provider.FunctionName);
+                string libraryName = Infrastructure.PlatformHelper.GetPlatformLibraryName(provider.BaseLibraryName);
+                _language = new Language(libraryName, provider.FunctionName);
             }
             catch (Exception ex)
             {

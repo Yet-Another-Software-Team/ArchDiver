@@ -8,7 +8,7 @@ namespace ArchDiver.Core.Languages
     public class JavaLanguageProvider : ILanguageProvider
     {
         public string LanguageId => "Java";
-        public string LibraryName => "tree-sitter-java.dll";
+        public string BaseLibraryName => "tree-sitter-java";
         public string FunctionName => "tree_sitter_java";
 
         private static readonly string[] _extensions = { ".java" };

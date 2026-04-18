@@ -8,7 +8,7 @@ namespace ArchDiver.Core.Languages
     public class CSharpLanguageProvider : ILanguageProvider
     {
         public string LanguageId => "CSharp";
-        public string LibraryName => "tree-sitter-c-sharp.dll";
+        public string BaseLibraryName => "tree-sitter-c-sharp";
         public string FunctionName => "tree_sitter_c_sharp";
 
         private static readonly string[] _extensions = { ".cs" };
