@@ -1,67 +1,48 @@
 # ArchDiver
 
-ArchDiver is a high-performance software architecture analysis tool designed to dive deep into codebases, extract structural relationships, and generate architectural insights. Built on top of **.NET 10.0** and **Tree-sitter**, it provides a robust pipeline for parsing, analyzing, and visualizing complex software systems.
+ArchDiver is an AI-driven codebase analysis tool designed to detect architectural smells, such as feature concentration. By leveraging Tree-sitter to parse code into a language-independent Intermediate Representation (IR), ArchDiver utilizes Graph Neural Networks to analyze structural dependencies. It operates as a Model Context Protocol (MCP) server, allowing external AI agents to seamlessly access and interpret your software's architecture.
 
-## 🚀 Features
+## Project Structure
 
-- **Multi-Language Parsing**: Powered by Tree-sitter. ArchDiver uses a **microkernel architecture** where each language is implemented as an independent provider.
-- **Automatic Language Detection**: CLI automatically detects the language based on file extension.
-- **Rich AST Model**: Captures precise source ranges, parent-child relationships, and metadata.
-- **Native Query Support**: Execute Tree-sitter S-expression queries directly against source files via CLI.
-- **Cross-Platform**: Built on .NET 10.0, ArchDiver runs on **Windows, Linux, and macOS**.
+- `src/ArchDiver.Core`: Core framework containing the microkernel, AST models, and the extraction pipeline.
+- `src/ArchDiver.Core/Abstractions`: Definition of provider interfaces and semantic attributes.
+- `src/ArchDiver.Core/Languages`: Language-specific implementation providers (CSharp, Python, Java).
+- `src/ArchDiver.Cli`: Command-line entry point for executing analysis pipelines.
+- `src/ArchDiver.Tests`: Unit testing suite for parser and extractor validation.
 
-## 🛠 Project Structure
-
-- `src/ArchDiver.Core`: The kernel. Contains the registry, bootstrapper, and base AST model.
-- `src/ArchDiver.Core/Languages`: Language-specific providers (e.g., `CSharpLanguageProvider.cs`).
-- `src/ArchDiver.Cli`: Command-line interface with automatic language detection.
-- `src/ArchDiver.Tests`: Validation suite.
-
-## 🏁 Getting Started
+## Technical Specifications
 
 ### Prerequisites
+- .NET 10.0 SDK
 
-- [.NET 10.0 SDK](https://dotnet.microsoft.com/download/dotnet/10.0)
-
-### Build & Test
-
-```powershell
-# Build the solution
+### Build and Test
+```bash
+# Build solution
 dotnet build ArchDiver.slnx
 
-# Run the unit tests
+# Execute tests
 dotnet test ArchDiver.slnx
 ```
 
-## 💻 CLI Usage
+## CLI Reference
 
-The ArchDiver CLI automatically detects the language based on the file extension.
+### Directory Exploration
+The `explore` command recursively scans a directory, identifies supported source files, extracts semantic concepts, and persists the results as TOML files in the `.archdiver/out` directory.
 
-### Parse and Inspect AST
-```powershell
-dotnet run --project src/ArchDiver.Cli -- parse <file_path> [--raw]
-```
-Use `--raw` to see native Tree-sitter field names (useful for writing queries).
-
-### Execute Tree-sitter Queries
-```powershell
-dotnet run --project src/ArchDiver.Cli -- query <file_path> "<query_string>"
-```
-**Example**: Find all property names in a C# file (no `--lang` needed):
-```powershell
-dotnet run --project src/ArchDiver.Cli -- query src/ArchDiver.Core/CodeParser.cs "(property_declaration name: (identifier) @name)"
+```bash
+dotnet run --project src/ArchDiver.Cli -- explore <directory_path> [--max-depth <n>]
 ```
 
+## Supported Languages
 
-## 🌍 Supported Languages
+| Language | Extension | Provider |
+|----------|-----------|----------|
+| C#       | `.cs`      | `CSharpLanguageProvider` |
+| Python   | `.py`      | `PythonLanguageProvider` |
+| Java     | `.java`    | `JavaLanguageProvider` |
 
-ArchDiver currently supports the following languages out-of-the-box:
-- **C#** (`.cs`)
-- **Python** (`.py`)
-- **Java** (`.java`)
+Extending language support requires implementing `ILanguageProvider` (or inheriting from `LanguageProviderBase`) and defining appropriate `NodeBinding` attributes for the target grammar.
 
-More languages (Go, JavaScript, C++, etc.) can be easily added by implementing a new `ILanguageProvider`.
+## License
 
-## 📄 License
-
-This project is licensed under the MIT License - see the [LICENSE](LICENSE) file for details.
+MIT License - see the [LICENSE](LICENSE) file for details.
