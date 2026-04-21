@@ -1,9 +1,4 @@
-using System;
-using System.IO;
-using System.Linq;
-using System.Collections.Generic;
 using ArchDiver.Core.Infrastructure;
-using ArchDiver.Core.Models;
 using ArchDiver.Core.Pipeline;
 
 namespace ArchDiver.Cli;

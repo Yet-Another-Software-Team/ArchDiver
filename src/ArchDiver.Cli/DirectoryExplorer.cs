@@ -1,5 +1,3 @@
-using System;
-using System.IO;
 using ArchDiver.Core.Pipeline;
 
 namespace ArchDiver.Cli;
