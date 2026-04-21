@@ -132,10 +132,13 @@ namespace ArchDiver.Cli
                 var codeParser = new CodeParser(provider);
                 var ast = codeParser.Parse(sourceCode);
 
-                string relativePath = Path.GetRelativePath(rootPath, filePath);
-                string outputPath = Path.Combine(outputRoot, relativePath + ".toml");
+                var conceptExtractor = new ConceptExtractor(provider);
+                var analysisResult = conceptExtractor.Extract(ast);
 
-                Directory.CreateDirectory(Path.GetDirectoryName(outputPath)!);
+                string relativePath = Path.GetRelativePath(rootPath, filePath);
+                string analysisOutputPath = Path.Combine(outputRoot, relativePath + ".concepts.toml");
+
+                Directory.CreateDirectory(Path.GetDirectoryName(analysisOutputPath)!);
 
                 var options = new TomlSerializerOptions
                 {
@@ -144,10 +147,10 @@ namespace ArchDiver.Cli
                     PropertyNamingPolicy = JsonNamingPolicy.SnakeCaseLower
                 };
 
-                var tomlModel = ToTomlModel(ast);
-                string toml = TomlSerializer.Serialize(tomlModel, options);
-
-                File.WriteAllText(outputPath, toml);
+                // Save Analysis
+                var analysisTomlModel = ToTomlModel(analysisResult);
+                string analysisToml = TomlSerializer.Serialize(analysisTomlModel, options);
+                File.WriteAllText(analysisOutputPath, analysisToml);
             }
             catch (Exception ex)
             {
@@ -155,39 +158,44 @@ namespace ArchDiver.Cli
             }
         }
 
-        static Tomlyn.Model.TomlTable ToTomlModel(AstNode node)
+        static Tomlyn.Model.TomlTable ToTomlModel(LanguageAnalysisResult result)
         {
             var table = new Tomlyn.Model.TomlTable();
-            table["type"] = node.Type;
-            table["text"] = node.Text;
+            table["language"] = result.Language;
 
-            var rangeTable = new Tomlyn.Model.TomlTable();
-
-            var startTable = new Tomlyn.Model.TomlTable();
-            startTable["line"] = node.Range.Start.Line;
-            startTable["column"] = node.Range.Start.Column;
-            startTable["offset"] = node.Range.Start.Offset;
-            rangeTable["start"] = startTable;
-
-            var endTable = new Tomlyn.Model.TomlTable();
-            endTable["line"] = node.Range.End.Line;
-            endTable["column"] = node.Range.End.Column;
-            endTable["offset"] = node.Range.End.Offset;
-            rangeTable["end"] = endTable;
-
-            table["range"] = rangeTable;
-
-            if (node.Children.Count > 0)
-            {
-                var childrenArray = new Tomlyn.Model.TomlTableArray();
-                foreach (var child in node.Children)
-                {
-                    childrenArray.Add(ToTomlModel(child));
-                }
-                table["children"] = childrenArray;
-            }
+            table["methods"] = ToTomlArray(result.Methods);
+            table["classes"] = ToTomlArray(result.Classes);
+            table["fields"] = ToTomlArray(result.Fields);
+            table["imports"] = ToTomlArray(result.Imports);
+            table["identifiers"] = ToTomlArray(result.Identifiers);
 
             return table;
+        }
+
+        static Tomlyn.Model.TomlTableArray ToTomlArray(List<ExtractedConcept> concepts)
+        {
+            var array = new Tomlyn.Model.TomlTableArray();
+            foreach (var concept in concepts)
+            {
+                var table = new Tomlyn.Model.TomlTable();
+                table["type"] = concept.Type;
+                table["text"] = concept.Text;
+
+                var rangeTable = new Tomlyn.Model.TomlTable();
+                var startTable = new Tomlyn.Model.TomlTable();
+                startTable["line"] = concept.Range.Start.Line;
+                startTable["column"] = concept.Range.Start.Column;
+                rangeTable["start"] = startTable;
+
+                var endTable = new Tomlyn.Model.TomlTable();
+                endTable["line"] = concept.Range.End.Line;
+                endTable["column"] = concept.Range.End.Column;
+                rangeTable["end"] = endTable;
+
+                table["range"] = rangeTable;
+                array.Add(table);
+            }
+            return array;
         }
 
         static void PrintNode(AstNode node, int indent)
@@ -205,31 +213,6 @@ namespace ArchDiver.Cli
             foreach (var child in node.Children)
             {
                 PrintNode(child, indent + 1);
-            }
-        }
-
-        static void PrintRawNode(Node node, int indent)
-        {
-            string indentation = new string(' ', indent * 2);
-            string? fieldName = null;
-
-            if (node.Parent != null)
-            {
-                var siblings = node.Parent.Children.ToList();
-                int index = siblings.IndexOf(node);
-                if (index != -1)
-                {
-                    fieldName = node.Parent.GetFieldNameForChild(index);
-                }
-            }
-
-            string fieldPrefix = !string.IsNullOrEmpty(fieldName) ? $"{fieldName}: " : "";
-
-            Console.WriteLine($"{indentation}- {fieldPrefix}{node.Type} [{node.StartPosition.Row}:{node.StartPosition.Column}]");
-
-            foreach (var child in node.Children)
-            {
-                PrintRawNode(child, indent + 1);
             }
         }
     }

@@ -1,3 +1,5 @@
+using System.Collections.Generic;
+
 namespace ArchDiver.Core.Abstractions
 {
     /// <summary>
@@ -19,6 +21,11 @@ namespace ArchDiver.Core.Abstractions
         /// The name of the exported C function that returns the TSLanguage pointer.
         /// </summary>
         string FunctionName { get; }
+
+        /// <summary>
+        /// Mappings from semantic concepts to language-specific AST node types.
+        /// </summary>
+        IReadOnlyDictionary<string, string[]> NodeBindings { get; }
 
         /// <summary>
         /// Determines if this provider can handle the given file.
