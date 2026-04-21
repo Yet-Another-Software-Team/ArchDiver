@@ -9,61 +9,65 @@ namespace ArchDiver.Core.Parsing;
 public class ConceptExtractor
 {
     private readonly ILanguageProvider _provider;
+    private readonly ComponentLevelExtractor _componentExtractor;
 
     public ConceptExtractor(ILanguageProvider provider)
     {
         _provider = provider ?? throw new ArgumentNullException(nameof(provider));
+        _componentExtractor = new ComponentLevelExtractor(provider, new LcomCalculator(provider));
     }
 
-    public LanguageAnalysisResult Extract(AstNode root)
+    public FileAnalysisResult Extract(AstNode root)
     {
-        var result = new LanguageAnalysisResult
-        {
-            Language = _provider.LanguageId
-        };
-
+        var result = new FileAnalysisResult();
         Traverse(root, result);
-
         return result;
     }
 
-    private void Traverse(AstNode node, LanguageAnalysisResult result)
+    private void Traverse(AstNode node, FileAnalysisResult result)
     {
-        foreach (var binding in _provider.NodeBindings)
+        if (IsType(node, "Class"))
         {
-            if (binding.Value.Contains(node.Type))
-            {
-                var concept = new ExtractedConcept
-                {
-                    Type = node.Type,
-                    Text = node.Text,
-                    Range = node.Range
-                };
-
-                switch (binding.Key)
-                {
-                    case "Method":
-                        result.Methods.Add(concept);
-                        break;
-                    case "Class":
-                        result.Classes.Add(concept);
-                        break;
-                    case "Field":
-                        result.Fields.Add(concept);
-                        break;
-                    case "Import":
-                        result.Imports.Add(concept);
-                        break;
-                    case "Identifier":
-                        result.Identifiers.Add(concept);
-                        break;
-                }
-            }
+            result.Components.Add(_componentExtractor.Extract(node));
+            return;
         }
+        if (IsType(node, "Import"))
+        {
+            var name = ExtractImportName(node);
+            if (!string.IsNullOrEmpty(name)) result.Imports.Add(name);
+        }
+        foreach (var child in node.Children) Traverse(child, result);
+    }
 
+    private string? ExtractImportName(AstNode node)
+    {
+        var fields = new[] { "name", "module", "namespace", "path" };
+        foreach (var field in fields)
+        {
+            var child = node.Children.FirstOrDefault(c => c.FieldName == field);
+            if (child != null) return child.Text;
+        }
+        return FindFirstIdentifier(node);
+    }
+
+    private string? FindFirstIdentifier(AstNode node)
+    {
+        if (IsType(node, "Identifier"))
+        {
+            string text = node.Text.Trim();
+            string[] kw = { "using", "import", "from", "package", "namespace", "static" };
+            if (!kw.Contains(text)) return text;
+        }
         foreach (var child in node.Children)
         {
-            Traverse(child, result);
+            var res = FindFirstIdentifier(child);
+            if (res != null) return res;
         }
+        return null;
+    }
+
+    private bool IsType(AstNode node, string concept)
+    {
+        return _provider.NodeBindings.TryGetValue(concept, out var types) && types.Contains(node.Type);
     }
 }

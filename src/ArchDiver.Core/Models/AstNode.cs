@@ -10,9 +10,9 @@ namespace ArchDiver.Core.Models;
 public class AstNode
 {
     public string Type { get; set; } = string.Empty;
+    public string? FieldName { get; set; }
     public string Text { get; set; } = string.Empty;
     public SourceRange Range { get; set; }
-
     [JsonIgnore]
     public AstNode? Parent { get; set; }
     [Tomlyn.Serialization.TomlPropertyOrder(100)]

@@ -2,19 +2,23 @@ using System.Collections.Generic;
 
 namespace ArchDiver.Core.Models;
 
-public class LanguageAnalysisResult
+public class FileAnalysisResult
 {
-    public string Language { get; set; } = string.Empty;
-    public List<ExtractedConcept> Methods { get; set; } = new();
-    public List<ExtractedConcept> Classes { get; set; } = new();
-    public List<ExtractedConcept> Fields { get; set; } = new();
-    public List<ExtractedConcept> Imports { get; set; } = new();
-    public List<ExtractedConcept> Identifiers { get; set; } = new();
+    public List<ComponentResult> Components { get; set; } = new();
+    public List<string> Imports { get; set; } = new();
 }
 
-public class ExtractedConcept
+public class ComponentResult
 {
-    public string Type { get; set; } = string.Empty;
-    public string Text { get; set; } = string.Empty;
-    public SourceRange Range { get; set; }
+    public string Name { get; set; } = string.Empty;
+    public List<string> Attribute { get; set; } = new();
+    public List<MethodResult> Methods { get; set; } = new();
+    public int NumMethods => Methods.Count;
+}
+
+public class MethodResult
+{
+    public string Name { get; set; } = string.Empty;
+    public List<string> Params { get; set; } = new();
+    public double Lcom { get; set; }
 }

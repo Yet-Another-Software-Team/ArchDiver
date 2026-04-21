@@ -65,14 +65,17 @@ public class CodeParser
             )
         };
 
-        foreach (var tsChild in tsNode.Children)
+        for (int i = 0; i < tsNode.Children.Count(); i++)
         {
+            var tsChild = tsNode.Children.ElementAt(i);
             if (tsChild != null)
             {
-                node.AddChild(MapToAstNode(tsChild, sourceCode));
+                var childNode = MapToAstNode(tsChild, sourceCode);
+                childNode.FieldName = tsNode.GetFieldNameForChild(i);
+                node.AddChild(childNode);
             }
         }
-
         return node;
     }
+
 }

@@ -1,0 +1,10 @@
+name = "ComponentName"
+attribute=["alpha", "bravo", "charlie"]
+num_methods = 1
+
+[methods]
+name = "foo"
+params = [""]
+lcom = 0.2
+
+

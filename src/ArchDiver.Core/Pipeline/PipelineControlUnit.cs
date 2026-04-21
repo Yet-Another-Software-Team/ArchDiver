@@ -25,29 +25,33 @@ public class PipelineControlUnit
     /// <param name="sourceCode">The source code to process.</param>
     /// <param name="languageId">The language ID to use for parsing.</param>
     /// <returns>The root node of the generated AST.</returns>
-    public AstNode Process(string sourceCode, string languageId = "CSharp")
+    /// <summary>
+    /// Processes source code and exports the extracted semantic concepts to TOML files (one per component).
+    /// </summary>
+    public void ProcessAndExport(string sourceCode, string filePath, string outputDir)
     {
         if (string.IsNullOrWhiteSpace(sourceCode))
-        {
             throw new ArgumentException("Source code cannot be null or whitespace.", nameof(sourceCode));
-        }
 
-        Console.WriteLine($"PipelineControlUnit: Initiating parsing phase for {languageId}...");
+        var provider = LanguageRegistry.Identify(filePath, sourceCode)
+                       ?? throw new NotSupportedException($"No provider found for file: {filePath}");
 
-        var provider = LanguageRegistry.GetById(languageId)
-                       ?? throw new NotSupportedException($"Language '{languageId}' is not registered.");
+        Console.WriteLine($"PipelineControlUnit: Processing {filePath} ({provider.LanguageId})...");
 
-        // Step 1: Parse the code into an AST
+        // 1. Parse AST
         var parser = new CodeParser(provider);
-        AstNode ast = parser.Parse(sourceCode);
-
-        Console.WriteLine($"PipelineControlUnit: Parsing complete. Generated AST root node of type '{ast.Type}'.");
-
-        // Store the parsed AST in the context storage
+        var ast = parser.Parse(sourceCode);
         _contextStorage.StoreAst(ast);
 
-        // TODO: Future pipeline stages (e.g., semantic analysis, indexing, exporting) will go here.
+        // 2. Extract Concepts
+        var extractor = new ConceptExtractor(provider);
+        var result = extractor.Extract(ast);
 
-        return ast;
+        // 3. Export to TOML (one file per component)
+        foreach (var comp in result.Components)
+        {
+            string componentPath = Path.Combine(outputDir, $"{comp.Name}.toml");
+            TomlExporter.ExportComponent(comp, result.Imports, componentPath);
+        }
     }
 }

@@ -10,8 +10,9 @@ namespace ArchDiver.Core.Languages;
 [NodeBinding("Class", "class_declaration", "struct_declaration", "record_declaration", "interface_declaration", "enum_declaration")]
 [NodeBinding("Field", "field_declaration", "property_declaration", "event_declaration")]
 [NodeBinding("Import", "using_directive")]
-[NodeBinding("Identifier", "identifier")]
+[NodeBinding("Identifier", "identifier", "qualified_name")]
 public class CSharpLanguageProvider : LanguageProviderBase
+
 {
     public override string LanguageId => "CSharp";
     public override string BaseLibraryName => "tree-sitter-c-sharp";

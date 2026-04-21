@@ -10,8 +10,9 @@ namespace ArchDiver.Core.Languages;
 [NodeBinding("Class", "class_definition")]
 [NodeBinding("Field", "assignment")]
 [NodeBinding("Import", "import_statement", "import_from_statement")]
-[NodeBinding("Identifier", "identifier")]
+[NodeBinding("Identifier", "identifier", "dotted_name")]
 public class PythonLanguageProvider : LanguageProviderBase
+
 {
     public override string LanguageId => "Python";
     public override string BaseLibraryName => "tree-sitter-python";
