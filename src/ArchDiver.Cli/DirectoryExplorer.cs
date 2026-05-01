@@ -1,16 +1,21 @@
 using ArchDiver.Core.Pipeline;
+using ArchDiver.Core.Abstractions;
 
 namespace ArchDiver.Cli;
 
 public class DirectoryExplorer
 {
     private readonly PipelineControlUnit _pipeline;
+    private readonly IExporter _exporter;
+    private readonly IArchLogger _logger;
     private readonly int _maxDepth;
     private readonly string _outputRoot;
 
-    public DirectoryExplorer(PipelineControlUnit pipeline, string outputRoot, int maxDepth)
+    public DirectoryExplorer(PipelineControlUnit pipeline, IExporter exporter, IArchLogger logger, string outputRoot, int maxDepth)
     {
         _pipeline = pipeline;
+        _exporter = exporter;
+        _logger = logger;
         _outputRoot = outputRoot;
         _maxDepth = maxDepth;
     }
@@ -34,7 +39,7 @@ public class DirectoryExplorer
         }
         catch (Exception ex)
         {
-            Console.WriteLine($"Warning: Failed to access {currentPath}: {ex.Message}");
+            _logger.LogWarning($"Failed to access {currentPath}: {ex.Message}");
         }
     }
 
@@ -49,12 +54,13 @@ public class DirectoryExplorer
             string fileNameWithoutExtension = Path.GetFileNameWithoutExtension(relativePath);
             string fileOutputDir = Path.Combine(_outputRoot, directoryName ?? "", fileNameWithoutExtension);
 
-            _pipeline.ProcessAndExport(sourceCode, filePath, fileOutputDir);
+            var result = _pipeline.Process(sourceCode, filePath);
+            _exporter.Export(result, fileOutputDir);
         }
         catch (NotSupportedException) { }
         catch (Exception ex)
         {
-            Console.WriteLine($"Error processing {filePath}: {ex.Message}");
+            _logger.LogError($"Error processing {filePath}: {ex.Message}");
         }
     }
 }

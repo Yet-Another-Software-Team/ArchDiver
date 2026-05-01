@@ -1,12 +1,25 @@
 using System.Text.Json;
 using Tomlyn;
 using ArchDiver.Core.Models;
+using ArchDiver.Core.Abstractions;
 
 namespace ArchDiver.Core.Parsing;
 
-public static class TomlExporter
+public class TomlExporter : IExporter
 {
-    public static void ExportComponent(ComponentResult component, List<string> imports, string outputPath)
+    public void Export(FileAnalysisResult result, string outputDir)
+    {
+        if (result == null) throw new ArgumentNullException(nameof(result));
+        if (string.IsNullOrEmpty(outputDir)) throw new ArgumentException("Output directory cannot be empty.", nameof(outputDir));
+
+        foreach (var comp in result.Components)
+        {
+            string componentPath = Path.Combine(outputDir, $"{comp.Name}.toml");
+            ExportComponent(comp, result.Imports, componentPath);
+        }
+    }
+
+    private void ExportComponent(ComponentResult component, List<string> imports, string outputPath)
     {
         if (component == null) throw new ArgumentNullException(nameof(component));
         if (string.IsNullOrEmpty(outputPath)) throw new ArgumentException("Output path cannot be empty.", nameof(outputPath));

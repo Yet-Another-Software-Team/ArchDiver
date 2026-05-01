@@ -1,4 +1,5 @@
 using ArchDiver.Core.Models;
+using ArchDiver.Core.Abstractions;
 
 namespace ArchDiver.Core.Storage;
 
@@ -8,12 +9,15 @@ namespace ArchDiver.Core.Storage;
 /// </summary>
 public class ContextStorage
 {
+    private readonly IArchLogger? _logger;
+
     // For now, it simply stores a collection of parsed AST nodes.
     // This will be expanded as GraphConstructor and other analyzers are implemented.
     public List<AstNode> ParsedAsts { get; private set; }
 
-    public ContextStorage()
+    public ContextStorage(IArchLogger? logger = null)
     {
+        _logger = logger;
         ParsedAsts = new List<AstNode>();
     }
 
@@ -29,7 +33,7 @@ public class ContextStorage
         }
 
         ParsedAsts.Add(ast);
-        Console.WriteLine($"ContextStorage: Successfully stored AST of type '{ast.Type}'.");
+        _logger?.LogInfo($"ContextStorage: Successfully stored AST of type '{ast.Type}'.");
     }
 
     /// <summary>
@@ -38,6 +42,6 @@ public class ContextStorage
     public void Clear()
     {
         ParsedAsts.Clear();
-        Console.WriteLine("ContextStorage: Cleared all stored context data.");
+        _logger?.LogInfo("ContextStorage: Cleared all stored context data.");
     }
 }

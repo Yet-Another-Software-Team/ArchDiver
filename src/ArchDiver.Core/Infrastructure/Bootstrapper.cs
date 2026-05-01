@@ -1,4 +1,5 @@
 using ArchDiver.Core.Languages;
+using ArchDiver.Core.Abstractions;
 
 namespace ArchDiver.Core.Infrastructure;
 
@@ -7,17 +8,15 @@ namespace ArchDiver.Core.Infrastructure;
 /// </summary>
 public static class Bootstrapper
 {
-    private static bool _isInitialized = false;
-
-    public static void Initialize()
+    public static ILanguageRegistry Initialize()
     {
-        if (_isInitialized) return;
+        var registry = new LanguageRegistry();
 
         // Register core language providers
-        LanguageRegistry.Register(new CSharpLanguageProvider());
-        LanguageRegistry.Register(new PythonLanguageProvider());
-        LanguageRegistry.Register(new JavaLanguageProvider());
+        registry.Register(new CSharpLanguageProvider());
+        registry.Register(new PythonLanguageProvider());
+        registry.Register(new JavaLanguageProvider());
 
-        _isInitialized = true;
+        return registry;
     }
 }

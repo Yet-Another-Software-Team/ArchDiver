@@ -5,14 +5,14 @@ namespace ArchDiver.Core.Infrastructure;
 /// <summary>
 /// Central registry for language providers (The Kernel).
 /// </summary>
-public static class LanguageRegistry
+public class LanguageRegistry : ILanguageRegistry
 {
-    private static readonly List<ILanguageProvider> _providers = new();
+    private readonly List<ILanguageProvider> _providers = new();
 
     /// <summary>
     /// Registers a new language provider.
     /// </summary>
-    public static void Register(ILanguageProvider provider)
+    public void Register(ILanguageProvider provider)
     {
         if (provider == null) throw new ArgumentNullException(nameof(provider));
 
@@ -25,7 +25,7 @@ public static class LanguageRegistry
     /// <summary>
     /// Identifies the correct provider for a given file.
     /// </summary>
-    public static ILanguageProvider? Identify(string filePath, string content)
+    public ILanguageProvider? Identify(string filePath, string content)
     {
         return _providers.FirstOrDefault(p => p.CanHandle(filePath, content));
     }
@@ -33,7 +33,7 @@ public static class LanguageRegistry
     /// <summary>
     /// Gets a provider by its unique ID.
     /// </summary>
-    public static ILanguageProvider? GetById(string languageId)
+    public ILanguageProvider? GetById(string languageId)
     {
         return _providers.FirstOrDefault(p => p.LanguageId.Equals(languageId, StringComparison.OrdinalIgnoreCase));
     }
@@ -41,5 +41,5 @@ public static class LanguageRegistry
     /// <summary>
     /// Lists all registered languages.
     /// </summary>
-    public static IEnumerable<string> GetSupportedLanguages() => _providers.Select(p => p.LanguageId);
+    public IEnumerable<string> GetSupportedLanguages() => _providers.Select(p => p.LanguageId);
 }
