@@ -1,7 +1,7 @@
-using ArchDiver.Core.Abstractions;
-using ArchDiver.Core.Infrastructure;
+using ArchDiver.Parser.Abstractions;
+using ArchDiver.Parser.Infrastructure;
 
-namespace ArchDiver.Core.Languages;
+namespace ArchDiver.Parser.Languages;
 
 [NodeBinding("Method", "method_declaration", "constructor_declaration")]
 [NodeBinding("Class", "class_declaration", "interface_declaration", "enum_declaration", "record_declaration")]

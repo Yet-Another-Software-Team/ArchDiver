@@ -1,9 +1,8 @@
-using ArchDiver.Core;
-using ArchDiver.Core.Infrastructure;
 using ArchDiver.Core.Models;
-using ArchDiver.Core.Parsing;
-using ArchDiver.Core.Languages;
-using ArchDiver.Core.Abstractions;
+using ArchDiver.Parser.Parsing;
+using ArchDiver.Parser.Languages;
+using ArchDiver.Parser.Abstractions;
+using ArchDiver.Parser.Infrastructure;
 using Xunit;
 
 namespace ArchDiver.Tests;
@@ -14,7 +13,16 @@ public class CodeParserTests
 
     public CodeParserTests()
     {
-        _registry = Bootstrapper.Initialize();
+        // For testing parser internals, we can still use the registry directly if needed,
+        // but here we align with the new structure.
+        var engine = Bootstrapper.Initialize() as ParserEngine;
+        // In a real scenario we'd probably use Reflection or a test-specific bootstrapper
+        // if we want to reach into ParserEngine's private registry,
+        // but for now let's just re-initialize a registry for the tests.
+        _registry = new LanguageRegistry();
+        _registry.Register(new CSharpLanguageProvider());
+        _registry.Register(new PythonLanguageProvider());
+        _registry.Register(new JavaLanguageProvider());
     }
 
     [Fact]

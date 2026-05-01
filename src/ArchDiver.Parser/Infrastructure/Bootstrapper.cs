@@ -1,14 +1,16 @@
-using ArchDiver.Core.Languages;
+using ArchDiver.Parser.Languages;
+using ArchDiver.Parser.Abstractions;
 using ArchDiver.Core.Abstractions;
+using ArchDiver.Parser.Parsing;
 
-namespace ArchDiver.Core.Infrastructure;
+namespace ArchDiver.Parser.Infrastructure;
 
 /// <summary>
 /// Handles the initialization and registration of all plugins in the microkernel.
 /// </summary>
 public static class Bootstrapper
 {
-    public static ILanguageRegistry Initialize()
+    public static ICodeAnalysisEngine Initialize()
     {
         var registry = new LanguageRegistry();
 
@@ -17,6 +19,6 @@ public static class Bootstrapper
         registry.Register(new PythonLanguageProvider());
         registry.Register(new JavaLanguageProvider());
 
-        return registry;
+        return new ParserEngine(registry);
     }
 }

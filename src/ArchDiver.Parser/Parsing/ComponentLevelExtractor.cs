@@ -1,7 +1,7 @@
-using ArchDiver.Core.Abstractions;
+using ArchDiver.Parser.Abstractions;
 using ArchDiver.Core.Models;
 
-namespace ArchDiver.Core.Parsing;
+namespace ArchDiver.Parser.Parsing;
 
 public class ComponentLevelExtractor(ILanguageProvider provider, LcomCalculator lcomCalculator)
 {

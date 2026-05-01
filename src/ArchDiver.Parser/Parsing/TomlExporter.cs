@@ -3,7 +3,7 @@ using Tomlyn;
 using ArchDiver.Core.Models;
 using ArchDiver.Core.Abstractions;
 
-namespace ArchDiver.Core.Parsing;
+namespace ArchDiver.Parser.Parsing;
 
 public class TomlExporter : IExporter
 {
@@ -59,8 +59,10 @@ public class TomlExporter : IExporter
         var methods = new Tomlyn.Model.TomlTableArray();
         foreach (var m in comp.Methods)
         {
-            var mTable = new Tomlyn.Model.TomlTable();
-            mTable["name"] = m.Name;
+            var mTable = new Tomlyn.Model.TomlTable
+            {
+                ["name"] = m.Name
+            };
 
             var pArray = new Tomlyn.Model.TomlArray();
             foreach (var p in m.Params) pArray.Add(p);

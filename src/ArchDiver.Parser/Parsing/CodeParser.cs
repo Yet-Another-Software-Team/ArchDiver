@@ -1,15 +1,16 @@
+using TreeSitterParser = TreeSitter.Parser;
 using TreeSitter;
-using ArchDiver.Core.Abstractions;
+using ArchDiver.Parser.Abstractions;
 using ArchDiver.Core.Models;
+using ArchDiver.Parser.Infrastructure;
 
-namespace ArchDiver.Core.Parsing;
+namespace ArchDiver.Parser.Parsing;
 
 /// <summary>
 /// A parser binding using Tree-sitter.
 /// </summary>
 public class CodeParser
 {
-    public Language Language => _language;
     private readonly Language _language;
 
     public CodeParser(ILanguageProvider provider)
@@ -18,7 +19,7 @@ public class CodeParser
 
         try
         {
-            string libraryName = Infrastructure.PlatformHelper.GetPlatformLibraryName(provider.BaseLibraryName);
+            string libraryName = PlatformHelper.GetPlatformLibraryName(provider.BaseLibraryName);
             _language = new Language(libraryName, provider.FunctionName);
         }
         catch (Exception ex)
@@ -39,7 +40,7 @@ public class CodeParser
             throw new ArgumentException("Source code cannot be null or empty.", nameof(sourceCode));
         }
 
-        using var parser = new Parser(_language);
+        using var parser = new TreeSitterParser(_language);
         using var tree = parser.Parse(sourceCode);
 
         if (tree == null || tree.RootNode == null)

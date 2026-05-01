@@ -1,18 +1,12 @@
-using ArchDiver.Core.Abstractions;
+using ArchDiver.Parser.Abstractions;
 using ArchDiver.Core.Models;
 
-namespace ArchDiver.Core.Parsing;
+namespace ArchDiver.Parser.Parsing;
 
-public class ConceptExtractor
+public class ConceptExtractor(ILanguageProvider provider)
 {
-    private readonly ILanguageProvider _provider;
-    private readonly ComponentLevelExtractor _componentExtractor;
-
-    public ConceptExtractor(ILanguageProvider provider)
-    {
-        _provider = provider ?? throw new ArgumentNullException(nameof(provider));
-        _componentExtractor = new ComponentLevelExtractor(provider, new LcomCalculator(provider));
-    }
+    private readonly ILanguageProvider _provider = provider ?? throw new ArgumentNullException(nameof(provider));
+    private readonly ComponentLevelExtractor _componentExtractor = new(provider, new LcomCalculator(provider));
 
     public FileAnalysisResult Extract(AstNode root)
     {

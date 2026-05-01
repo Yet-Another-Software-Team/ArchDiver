@@ -1,20 +1,19 @@
-using ArchDiver.Core.Infrastructure;
 using ArchDiver.Core.Pipeline;
-using ArchDiver.Core.Parsing;
 using ArchDiver.Core.Abstractions;
+using ArchDiver.Parser.Infrastructure;
 
 namespace ArchDiver.Cli;
 
 class Program
 {
     private static int _maxDepth = 10;
-    private static string _outputDir = ".archdiver/out";
+    private static readonly string _outputDir = ".archdiver/out";
     private static readonly IArchLogger _logger = new ConsoleLogger();
-    private static ILanguageRegistry _languageRegistry = null!;
+    private static ICodeAnalysisEngine _analysisEngine = null!;
 
     static void Main(string[] args)
     {
-        _languageRegistry = Bootstrapper.Initialize();
+        _analysisEngine = Bootstrapper.Initialize();
         if (args.Length < 1) { PrintUsage(); return; }
 
         string command = args[0].ToLower();
@@ -26,7 +25,7 @@ class Program
     {
         Console.WriteLine("ArchDiver CLI\nUsage:\n  archdiver explore <directory_path> [--max-depth <n>]\n");
         Console.WriteLine("Commands:\n  explore  Recursively parses all supported files in a directory.\n");
-        Console.WriteLine($"Supported Languages: {string.Join(", ", _languageRegistry.GetSupportedLanguages())}");
+        Console.WriteLine($"Supported Languages: {string.Join(", ", _analysisEngine.GetSupportedLanguages())}");
     }
 
     static void HandleExplore(string[] args)
@@ -48,8 +47,8 @@ class Program
 
         _logger.LogInfo($"Exploring directory: {rootPath} (Max Depth: {_maxDepth})");
 
-        var pipeline = new PipelineControlUnit(_languageRegistry, logger: _logger);
-        var exporter = new TomlExporter();
+        var pipeline = new PipelineControlUnit(_analysisEngine, logger: _logger);
+        var exporter = new ArchDiver.Parser.Parsing.TomlExporter(); // Note: TomlExporter is still in Parser project for now
         var explorer = new DirectoryExplorer(pipeline, exporter, _logger, outputRoot, _maxDepth);
 
         explorer.Explore(rootPath, rootPath, 0);

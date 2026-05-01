@@ -1,4 +1,4 @@
-namespace ArchDiver.Core.Abstractions;
+namespace ArchDiver.Parser.Abstractions;
 
 /// <summary>
 /// Defines the contract for a language plugin in the ArchDiver microkernel.

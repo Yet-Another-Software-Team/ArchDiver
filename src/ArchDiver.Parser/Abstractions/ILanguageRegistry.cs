@@ -1,6 +1,6 @@
-using ArchDiver.Core.Abstractions;
+using ArchDiver.Parser.Abstractions;
 
-namespace ArchDiver.Core.Abstractions;
+namespace ArchDiver.Parser.Abstractions;
 
 public interface ILanguageRegistry
 {

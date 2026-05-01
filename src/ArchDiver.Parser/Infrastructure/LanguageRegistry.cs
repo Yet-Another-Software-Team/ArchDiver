@@ -1,6 +1,6 @@
-using ArchDiver.Core.Abstractions;
+using ArchDiver.Parser.Abstractions;
 
-namespace ArchDiver.Core.Infrastructure;
+namespace ArchDiver.Parser.Infrastructure;
 
 /// <summary>
 /// Central registry for language providers (The Kernel).

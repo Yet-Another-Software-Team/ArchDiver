@@ -1,8 +1,8 @@
 using System.Collections.ObjectModel;
 using System.Reflection;
-using ArchDiver.Core.Abstractions;
+using ArchDiver.Parser.Abstractions;
 
-namespace ArchDiver.Core.Infrastructure;
+namespace ArchDiver.Parser.Infrastructure;
 
 public abstract class LanguageProviderBase : ILanguageProvider
 {

@@ -9,6 +9,7 @@
 
   <ItemGroup>
     <ProjectReference Include="..\ArchDiver.Core\ArchDiver.Core.csproj" />
+    <ProjectReference Include="..\ArchDiver.Parser\ArchDiver.Parser.csproj" />
   </ItemGroup>
 
   <ItemGroup>

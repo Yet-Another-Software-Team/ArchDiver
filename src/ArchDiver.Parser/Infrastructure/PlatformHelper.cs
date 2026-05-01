@@ -1,6 +1,6 @@
 using System.Runtime.InteropServices;
 
-namespace ArchDiver.Core.Infrastructure;
+namespace ArchDiver.Parser.Infrastructure;
 
 public static class PlatformHelper
 {
