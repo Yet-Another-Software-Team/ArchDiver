@@ -60,3 +60,4 @@ TestResult.xml
 nunit-*.xml
 
 .archdiver
+archdiver.toml
