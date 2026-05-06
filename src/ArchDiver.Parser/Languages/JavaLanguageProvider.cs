@@ -7,9 +7,9 @@ namespace ArchDiver.Parser.Languages;
 [NodeBinding("Class", "class_declaration", "interface_declaration", "enum_declaration", "record_declaration")]
 [NodeBinding("Field", "field_declaration")]
 [NodeBinding("Import", "import_declaration")]
-[NodeBinding("Identifier", "identifier", "scoped_identifier")]
+[NodeBinding("ImportName", "scoped_identifier", "identifier")]
+[NodeBinding("Identifier", "identifier")]
 public class JavaLanguageProvider : LanguageProviderBase
-
 {
     public override string LanguageId => "Java";
     public override string BaseLibraryName => "tree-sitter-java";

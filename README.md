@@ -33,6 +33,14 @@ The `explore` command recursively scans a directory, identifies supported source
 dotnet run --project src/ArchDiver.Cli -- explore <directory_path> [--max-depth <n>]
 ```
 
+### Configuration
+The `config` command allows you to create and manage configuration files for ArchDiver.
+
+```bash
+dotnet run --project src/ArchDiver.Cli -- config create
+dotnet run --project src/ArchDiver.Cli -- config
+```
+
 ## Supported Languages
 
 | Language | Extension | Provider |

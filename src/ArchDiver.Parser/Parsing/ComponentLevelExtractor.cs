@@ -41,16 +41,8 @@ public class ComponentLevelExtractor(ILanguageProvider provider, ILoggerFactory 
             component.Name = GetNamedChildText(node, "name") ?? "UnnamedComponent";
         }
 
-        if (IsType(node, "Field"))
-        {
-            string? name = GetNamedChildText(node, "name");
-            if (name != null)
-            {
-                fields.Add(name);
-            }
-            if (name != null && node.Type != "field_declaration") return;
-        }
-        else if (IsType(node, "Method"))
+        bool isMethod = IsType(node, "Method");
+        if (isMethod)
         {
             var method = new MethodResult
             {
@@ -58,12 +50,38 @@ public class ComponentLevelExtractor(ILanguageProvider provider, ILoggerFactory 
             };
             component.Methods.Add(method);
             methodsWithNodes.Add((method, node));
-            return;
+        }
+
+        if (_provider.LanguageId == "Python")
+        {
+            ExtractPythonFields(node, fields);
+        }
+        else if (IsType(node, "Field"))
+        {
+            string? name = GetNamedChildText(node, "name");
+            if (name != null)
+            {
+                fields.Add(name);
+            }
         }
 
         foreach (var child in node.Children)
         {
+            if (isMethod && _provider.LanguageId != "Python") continue;
             ExtractMembers(child, component, fields, methodsWithNodes);
+        }
+    }
+
+    private void ExtractPythonFields(AstNode node, HashSet<string> fields)
+    {
+        if (node.Type == "attribute")
+        {
+            var obj = node.Children.FirstOrDefault(c => c.FieldName == "object");
+            if (obj?.Text == "self")
+            {
+                var attr = node.Children.FirstOrDefault(c => c.FieldName == "attribute");
+                if (attr != null) fields.Add(attr.Text);
+            }
         }
     }
 
@@ -76,7 +94,9 @@ public class ComponentLevelExtractor(ILanguageProvider provider, ILoggerFactory 
 
         foreach (var child in node.Children)
         {
-            if (child.Type == "variable_declaration" || child.Type == "variable_declarator")
+            // C#: variable_declarator has 'name'
+            // Java: variable_declarator has 'name'
+            if (child.Type.Contains("declaration") || child.Type.Contains("declarator") || child.Type.Contains("designation") || child.Type == "variable_declaration")
             {
                 var nested = GetNamedChildText(child, fieldName);
                 if (nested != null) return nested;

@@ -7,6 +7,7 @@ namespace ArchDiver.Parser.Languages;
 [NodeBinding("Class", "class_declaration", "struct_declaration", "record_declaration", "interface_declaration", "enum_declaration")]
 [NodeBinding("Field", "variable_declarator", "property_declaration", "field_declaration")]
 [NodeBinding("Import", "using_directive")]
+[NodeBinding("ImportName", "identifier", "qualified_name")]
 [NodeBinding("Identifier", "identifier")]
 public class CSharpLanguageProvider : LanguageProviderBase
 {
