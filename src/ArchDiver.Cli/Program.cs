@@ -1,5 +1,6 @@
 using ArchDiver.Core.Pipeline;
 using ArchDiver.Core.Abstractions;
+using ArchDiver.Core.Infrastructure;
 using ArchDiver.Parser.Infrastructure;
 
 namespace ArchDiver.Cli;
@@ -48,10 +49,19 @@ class Program
         _logger.LogInfo($"Exploring directory: {rootPath} (Max Depth: {_maxDepth})");
 
         var pipeline = new PipelineControlUnit(_analysisEngine, logger: _logger);
-        var exporter = new ArchDiver.Parser.Parsing.TomlExporter(); // Note: TomlExporter is still in Parser project for now
-        var explorer = new DirectoryExplorer(pipeline, exporter, _logger, outputRoot, _maxDepth);
+        var exporter = new TomlExporter();
 
-        explorer.Explore(rootPath, rootPath, 0);
+        var explorer = new DirectoryExplorer(pipeline, _logger, _maxDepth, (filePath, result) =>
+        {
+            string relativePath = Path.GetRelativePath(rootPath, filePath);
+            string? directoryName = Path.GetDirectoryName(relativePath);
+            string fileNameWithoutExtension = Path.GetFileNameWithoutExtension(relativePath);
+            string fileOutputDir = Path.Combine(outputRoot, directoryName ?? "", fileNameWithoutExtension);
+
+            exporter.Export(result, fileOutputDir);
+        });
+
+        explorer.Explore(rootPath);
         _logger.LogInfo($"Exploration complete. Results saved in {outputRoot}");
     }
 }

@@ -3,7 +3,7 @@ using Tomlyn;
 using ArchDiver.Core.Models;
 using ArchDiver.Core.Abstractions;
 
-namespace ArchDiver.Parser.Parsing;
+namespace ArchDiver.Core.Infrastructure;
 
 public class TomlExporter : IExporter
 {
