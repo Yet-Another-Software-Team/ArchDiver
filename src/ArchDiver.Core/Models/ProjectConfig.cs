@@ -1,3 +1,5 @@
+using Microsoft.Extensions.Logging;
+
 namespace ArchDiver.Core.Models;
 
 public class ProjectConfig
@@ -7,7 +9,7 @@ public class ProjectConfig
 
     public class LoggingConfig
     {
-        public int Level { get; set; } = 1; // 0: Error, 1: Warning, 2: Info
+        public LogLevel MinimumLevel { get; set; } = LogLevel.Information;
     }
 
     public class AnalysisConfig

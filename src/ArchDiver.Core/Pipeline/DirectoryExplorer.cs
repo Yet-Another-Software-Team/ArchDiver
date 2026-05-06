@@ -1,4 +1,4 @@
-using ArchDiver.Core.Abstractions;
+using Microsoft.Extensions.Logging;
 using ArchDiver.Core.Models;
 
 namespace ArchDiver.Core.Pipeline;
@@ -6,27 +6,18 @@ namespace ArchDiver.Core.Pipeline;
 /// <summary>
 /// Orchestrates the recursive exploration of a directory, triggering the pipeline for each file.
 /// </summary>
-public class DirectoryExplorer
+public class DirectoryExplorer(
+    PipelineControlUnit pipeline,
+    ILogger<DirectoryExplorer> logger,
+    int maxDepth = 10,
+    List<string>? ignorePatterns = null,
+    Action<string, FileAnalysisResult>? onFileProcessed = null)
 {
-    private readonly PipelineControlUnit _pipeline;
-    private readonly IArchLogger _logger;
-    private readonly int _maxDepth;
-    private readonly List<string> _ignorePatterns;
-    private readonly Action<string, FileAnalysisResult>? _onFileProcessed;
-
-    public DirectoryExplorer(
-        PipelineControlUnit pipeline,
-        IArchLogger logger,
-        int maxDepth = 10,
-        List<string>? ignorePatterns = null,
-        Action<string, FileAnalysisResult>? onFileProcessed = null)
-    {
-        _pipeline = pipeline ?? throw new ArgumentNullException(nameof(pipeline));
-        _logger = logger ?? throw new ArgumentNullException(nameof(logger));
-        _maxDepth = maxDepth;
-        _ignorePatterns = ignorePatterns ?? new List<string>();
-        _onFileProcessed = onFileProcessed;
-    }
+    private readonly PipelineControlUnit _pipeline = pipeline ?? throw new ArgumentNullException(nameof(pipeline));
+    private readonly ILogger<DirectoryExplorer> _logger = logger ?? throw new ArgumentNullException(nameof(logger));
+    private readonly int _maxDepth = maxDepth;
+    private readonly List<string> _ignorePatterns = ignorePatterns ?? new List<string>();
+    private readonly Action<string, FileAnalysisResult>? _onFileProcessed = onFileProcessed;
 
     /// <summary>
     /// Recursively explores the directory starting from rootPath.
@@ -58,7 +49,7 @@ public class DirectoryExplorer
         }
         catch (Exception ex)
         {
-            _logger.LogWarning($"DirectoryExplorer: Failed to access {currentPath}: {ex.Message}");
+            _logger.LogWarning(ex, "Failed to access {CurrentPath}", currentPath);
         }
     }
 
@@ -73,10 +64,11 @@ public class DirectoryExplorer
         }
         catch (NotSupportedException)
         {
+            // Silently skip
         }
         catch (Exception ex)
         {
-            _logger.LogError($"DirectoryExplorer: Error processing {filePath}: {ex.Message}");
+            _logger.LogError(ex, "Error processing {FilePath}", filePath);
         }
     }
 }

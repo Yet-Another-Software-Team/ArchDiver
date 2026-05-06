@@ -9,18 +9,18 @@ namespace ArchDiver.Parser.Parsing;
 /// <summary>
 /// A parser binding using Tree-sitter.
 /// </summary>
-public class CodeParser
+public class CodeParser(ILanguageProvider provider)
 {
-    private readonly Language _language;
+    private readonly Language _language = InitializeLanguage(provider);
 
-    public CodeParser(ILanguageProvider provider)
+    private static Language InitializeLanguage(ILanguageProvider provider)
     {
         if (provider == null) throw new ArgumentNullException(nameof(provider));
 
         try
         {
             string libraryName = PlatformHelper.GetPlatformLibraryName(provider.BaseLibraryName);
-            _language = new Language(libraryName, provider.FunctionName);
+            return new Language(libraryName, provider.FunctionName);
         }
         catch (Exception ex)
         {
@@ -75,5 +75,4 @@ public class CodeParser
         }
         return node;
     }
-
 }

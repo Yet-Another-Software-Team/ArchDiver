@@ -5,60 +5,43 @@ namespace ArchDiver.Parser.Parsing;
 
 public class ConceptExtractor(ILanguageProvider provider)
 {
-    private readonly ILanguageProvider _provider = provider ?? throw new ArgumentNullException(nameof(provider));
-    private readonly ComponentLevelExtractor _componentExtractor = new(provider, new LcomCalculator(provider));
+    private readonly ILanguageProvider _provider = provider;
 
     public FileAnalysisResult Extract(AstNode root)
     {
         var result = new FileAnalysisResult();
-        Traverse(root, result);
+        var components = new List<ComponentResult>();
+
+        ExtractRec(root, components, result.Imports);
+        result.Components = components;
+
         return result;
     }
 
-    private void Traverse(AstNode node, FileAnalysisResult result)
+    private void ExtractRec(AstNode node, List<ComponentResult> components, List<string> imports)
     {
         if (IsType(node, "Class"))
         {
-            result.Components.Add(_componentExtractor.Extract(node));
-            return;
+            var compExtractor = new ComponentLevelExtractor(_provider);
+            components.Add(compExtractor.Extract(node));
         }
-        if (IsType(node, "Import"))
+        else if (IsType(node, "Import"))
         {
-            var name = ExtractImportName(node);
-            if (!string.IsNullOrEmpty(name)) result.Imports.Add(name);
+            imports.Add(node.Text);
         }
-        foreach (var child in node.Children) Traverse(child, result);
-    }
 
-    private string? ExtractImportName(AstNode node)
-    {
-        var fields = new[] { "name", "module", "namespace", "path" };
-        foreach (var field in fields)
-        {
-            var child = node.Children.FirstOrDefault(c => c.FieldName == field);
-            if (child != null) return child.Text;
-        }
-        return FindFirstIdentifier(node);
-    }
-
-    private string? FindFirstIdentifier(AstNode node)
-    {
-        if (IsType(node, "Identifier"))
-        {
-            string text = node.Text.Trim();
-            string[] kw = { "using", "import", "from", "package", "namespace", "static" };
-            if (!kw.Contains(text)) return text;
-        }
         foreach (var child in node.Children)
         {
-            var res = FindFirstIdentifier(child);
-            if (res != null) return res;
+            ExtractRec(child, components, imports);
         }
-        return null;
     }
 
     private bool IsType(AstNode node, string concept)
     {
-        return _provider.NodeBindings.TryGetValue(concept, out var types) && types.Contains(node.Type);
+        if (_provider.NodeBindings.TryGetValue(concept, out var types))
+        {
+            return types.Contains(node.Type);
+        }
+        return false;
     }
 }
