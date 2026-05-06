@@ -1,12 +1,16 @@
-using ArchDiver.Core.Abstractions;
-using ArchDiver.Core.Infrastructure;
+using ArchDiver.Parser.Abstractions;
+using ArchDiver.Parser.Infrastructure;
 
-namespace ArchDiver.Core.Languages;
+namespace ArchDiver.Parser.Languages;
 
 [NodeBinding("Method", "function_definition")]
+[NodeBinding("MethodName", "identifier")]
 [NodeBinding("Class", "class_definition")]
-[NodeBinding("Field", "assignment")]
+[NodeBinding("ClassName", "identifier")]
+[NodeBinding("Field", "assignment", "expression_statement")]
+[NodeBinding("FieldName", "identifier")]
 [NodeBinding("Import", "import_statement", "import_from_statement")]
+[NodeBinding("ImportName", "dotted_name", "identifier")]
 [NodeBinding("Identifier", "identifier", "dotted_name")]
 public class PythonLanguageProvider : LanguageProviderBase
 

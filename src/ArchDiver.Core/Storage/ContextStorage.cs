@@ -9,7 +9,6 @@ namespace ArchDiver.Core.Storage;
 public class ContextStorage
 {
     // For now, it simply stores a collection of parsed AST nodes.
-    // This will be expanded as GraphConstructor and other analyzers are implemented.
     public List<AstNode> ParsedAsts { get; private set; }
 
     public ContextStorage()
@@ -20,16 +19,10 @@ public class ContextStorage
     /// <summary>
     /// Stores an Abstract Syntax Tree node into the context.
     /// </summary>
-    /// <param name="ast">The AST node to store.</param>
     public void StoreAst(AstNode ast)
     {
-        if (ast == null)
-        {
-            throw new ArgumentNullException(nameof(ast));
-        }
-
+        if (ast == null) throw new ArgumentNullException(nameof(ast));
         ParsedAsts.Add(ast);
-        Console.WriteLine($"ContextStorage: Successfully stored AST of type '{ast.Type}'.");
     }
 
     /// <summary>
@@ -38,6 +31,5 @@ public class ContextStorage
     public void Clear()
     {
         ParsedAsts.Clear();
-        Console.WriteLine("ContextStorage: Cleared all stored context data.");
     }
 }

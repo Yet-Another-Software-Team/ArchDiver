@@ -1,24 +1,30 @@
-using ArchDiver.Core;
-using ArchDiver.Core.Infrastructure;
 using ArchDiver.Core.Models;
-using ArchDiver.Core.Parsing;
-using ArchDiver.Core.Languages;
+using ArchDiver.Parser.Parsing;
+using ArchDiver.Parser.Languages;
+using ArchDiver.Parser.Abstractions;
+using ArchDiver.Parser.Infrastructure;
 using Xunit;
+using Microsoft.Extensions.Logging.Abstractions;
 
 namespace ArchDiver.Tests;
 
 public class CodeParserTests
 {
+    private readonly ILanguageRegistry _registry;
+
     public CodeParserTests()
     {
-        Bootstrapper.Initialize();
+        _registry = new LanguageRegistry();
+        _registry.Register(new CSharpLanguageProvider());
+        _registry.Register(new PythonLanguageProvider());
+        _registry.Register(new JavaLanguageProvider());
     }
 
     [Fact]
     public void Parse_ValidCSharp_ReturnsAstWithExpectedRoot()
     {
         // Arrange
-        var provider = LanguageRegistry.GetById("CSharp")!;
+        var provider = _registry.GetById("CSharp")!;
         var parser = new CodeParser(provider);
         var sourceCode = "class Program { void Main() {} }";
 
@@ -35,7 +41,7 @@ public class CodeParserTests
     public void Parse_SmallSnippet_ContainsCorrectMetadata()
     {
         // Arrange
-        var provider = LanguageRegistry.GetById("CSharp")!;
+        var provider = _registry.GetById("CSharp")!;
         var parser = new CodeParser(provider);
         var sourceCode = "// Hello";
 
@@ -53,7 +59,7 @@ public class CodeParserTests
     public void Parse_ValidPython_ReturnsAst()
     {
         // Arrange
-        var provider = LanguageRegistry.GetById("Python")!;
+        var provider = _registry.GetById("Python")!;
         var parser = new CodeParser(provider);
         var sourceCode = "def main():\n    print('Hello')";
 
@@ -70,7 +76,7 @@ public class CodeParserTests
     public void Parse_ValidJava_ReturnsAst()
     {
         // Arrange
-        var provider = LanguageRegistry.GetById("Java")!;
+        var provider = _registry.GetById("Java")!;
         var parser = new CodeParser(provider);
         var sourceCode = "class Main { public static void main(String[] args) {} }";
 

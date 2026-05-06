@@ -1,25 +1,26 @@
+using TreeSitterParser = TreeSitter.Parser;
 using TreeSitter;
-using ArchDiver.Core.Abstractions;
+using ArchDiver.Parser.Abstractions;
 using ArchDiver.Core.Models;
+using ArchDiver.Parser.Infrastructure;
 
-namespace ArchDiver.Core.Parsing;
+namespace ArchDiver.Parser.Parsing;
 
 /// <summary>
 /// A parser binding using Tree-sitter.
 /// </summary>
-public class CodeParser
+public class CodeParser(ILanguageProvider provider)
 {
-    public Language Language => _language;
-    private readonly Language _language;
+    private readonly Language _language = InitializeLanguage(provider);
 
-    public CodeParser(ILanguageProvider provider)
+    private static Language InitializeLanguage(ILanguageProvider provider)
     {
         if (provider == null) throw new ArgumentNullException(nameof(provider));
 
         try
         {
-            string libraryName = Infrastructure.PlatformHelper.GetPlatformLibraryName(provider.BaseLibraryName);
-            _language = new Language(libraryName, provider.FunctionName);
+            string libraryName = PlatformHelper.GetPlatformLibraryName(provider.BaseLibraryName);
+            return new Language(libraryName, provider.FunctionName);
         }
         catch (Exception ex)
         {
@@ -39,7 +40,7 @@ public class CodeParser
             throw new ArgumentException("Source code cannot be null or empty.", nameof(sourceCode));
         }
 
-        using var parser = new Parser(_language);
+        using var parser = new TreeSitterParser(_language);
         using var tree = parser.Parse(sourceCode);
 
         if (tree == null || tree.RootNode == null)
@@ -74,5 +75,4 @@ public class CodeParser
         }
         return node;
     }
-
 }

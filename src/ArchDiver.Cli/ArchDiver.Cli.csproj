@@ -9,10 +9,11 @@
 
   <ItemGroup>
     <ProjectReference Include="..\ArchDiver.Core\ArchDiver.Core.csproj" />
+    <ProjectReference Include="..\ArchDiver.Parser\ArchDiver.Parser.csproj" />
   </ItemGroup>
 
   <ItemGroup>
-    <PackageReference Include="Tomlyn" Version="2.3.0" />
+    <PackageReference Include="Microsoft.Extensions.Logging.Console" Version="10.0.7" />
   </ItemGroup>
 
 </Project>

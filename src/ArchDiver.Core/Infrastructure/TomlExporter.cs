@@ -1,12 +1,43 @@
 using System.Text.Json;
 using Tomlyn;
 using ArchDiver.Core.Models;
+using ArchDiver.Core.Abstractions;
 
-namespace ArchDiver.Core.Parsing;
+namespace ArchDiver.Core.Infrastructure;
 
-public static class TomlExporter
+public class TomlExporter : IExporter
 {
-    public static void ExportComponent(ComponentResult component, List<string> imports, string outputPath)
+    public void Export(FileAnalysisResult result, string outputDir)
+    {
+        Export(result, outputDir, null);
+    }
+
+    /// <summary>
+    /// Exports the analysis results to TOML files.
+    /// </summary>
+    /// <param name="result">The analysis result.</param>
+    /// <param name="outputDir">The directory to save files in.</param>
+    /// <param name="namePrefix">Optional prefix for the filenames (e.g. the source filename).</param>
+    public void Export(FileAnalysisResult result, string outputDir, string? namePrefix = null)
+    {
+        if (result == null) throw new ArgumentNullException(nameof(result));
+        if (string.IsNullOrEmpty(outputDir)) throw new ArgumentException("Output directory cannot be empty.", nameof(outputDir));
+
+        foreach (var comp in result.Components)
+        {
+            string baseName = string.IsNullOrWhiteSpace(comp.Name) ? "unnamed_component" : comp.Name;
+
+            // If we have a prefix and it's not the same as the component name, use [Prefix].[ComponentName]
+            string fileName = (string.IsNullOrEmpty(namePrefix) || namePrefix == baseName)
+                ? baseName
+                : $"{namePrefix}.{baseName}";
+
+            string componentPath = Path.Combine(outputDir, $"{fileName}.toml");
+            ExportComponent(comp, result.Imports, componentPath);
+        }
+    }
+
+    private void ExportComponent(ComponentResult component, List<string> imports, string outputPath)
     {
         if (component == null) throw new ArgumentNullException(nameof(component));
         if (string.IsNullOrEmpty(outputPath)) throw new ArgumentException("Output path cannot be empty.", nameof(outputPath));
@@ -34,7 +65,8 @@ public static class TomlExporter
     {
         var root = new Tomlyn.Model.TomlTable
         {
-            ["name"] = comp.Name
+            ["name"] = comp.Name,
+            ["lcom"] = comp.Lcom
         };
 
         var attrArray = new Tomlyn.Model.TomlArray();
@@ -46,8 +78,10 @@ public static class TomlExporter
         var methods = new Tomlyn.Model.TomlTableArray();
         foreach (var m in comp.Methods)
         {
-            var mTable = new Tomlyn.Model.TomlTable();
-            mTable["name"] = m.Name;
+            var mTable = new Tomlyn.Model.TomlTable
+            {
+                ["name"] = m.Name
+            };
 
             var pArray = new Tomlyn.Model.TomlArray();
             foreach (var p in m.Params) pArray.Add(p);
