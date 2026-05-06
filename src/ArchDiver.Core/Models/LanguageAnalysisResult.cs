@@ -12,6 +12,7 @@ public class ComponentResult
     public List<string> Attribute { get; set; } = [];
     public List<MethodResult> Methods { get; set; } = [];
     public int NumMethods => Methods.Count;
+    public double Lcom { get; set; }
 }
 
 public class MethodResult

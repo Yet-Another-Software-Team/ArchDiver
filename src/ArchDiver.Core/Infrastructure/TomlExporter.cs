@@ -65,7 +65,8 @@ public class TomlExporter : IExporter
     {
         var root = new Tomlyn.Model.TomlTable
         {
-            ["name"] = comp.Name
+            ["name"] = comp.Name,
+            ["lcom"] = comp.Lcom
         };
 
         var attrArray = new Tomlyn.Model.TomlArray();

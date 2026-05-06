@@ -19,16 +19,14 @@ class Program
 
     static void Main(string[] args)
     {
-        _analysisEngine = Bootstrapper.Initialize();
-
         ProjectConfig config = File.Exists(_configFileName)
             ? _configManager.Load(_configFileName)
             : _configManager.GetDefault();
 
         ConfigureLogging(config.Logging.MinimumLevel);
+        _analysisEngine = Bootstrapper.Initialize(_loggerFactory);
 
         if (args.Length < 1) { PrintUsage(); return; }
-
         string command = args[0].ToLower();
         switch (command)
         {
@@ -120,8 +118,6 @@ class Program
 
             string fileOutputDir = Path.Combine(outputRoot, directoryName ?? "");
 
-            // For DX and Graph construction, using Prefix.ComponentName is cleaner.
-            // We pass the source filename as the prefix.
             exporter.Export(result, fileOutputDir, fileNameWithoutExtension);
         });
 

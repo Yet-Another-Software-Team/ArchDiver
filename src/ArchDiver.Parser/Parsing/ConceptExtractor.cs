@@ -1,11 +1,13 @@
 using ArchDiver.Parser.Abstractions;
 using ArchDiver.Core.Models;
+using Microsoft.Extensions.Logging;
 
 namespace ArchDiver.Parser.Parsing;
 
-public class ConceptExtractor(ILanguageProvider provider)
+public class ConceptExtractor(ILanguageProvider provider, ILoggerFactory loggerFactory)
 {
     private readonly ILanguageProvider _provider = provider;
+    private readonly ILoggerFactory _loggerFactory = loggerFactory;
 
     public FileAnalysisResult Extract(AstNode root)
     {
@@ -20,16 +22,10 @@ public class ConceptExtractor(ILanguageProvider provider)
 
     private void ExtractRec(AstNode node, List<ComponentResult> components, List<string> imports)
     {
-        // Check for Class, Interface, Struct, etc. (mapped to "Class" in NodeBindings)
         if (IsType(node, "Class"))
         {
-            var compExtractor = new ComponentLevelExtractor(_provider);
+            var compExtractor = new ComponentLevelExtractor(_provider, _loggerFactory);
             components.Add(compExtractor.Extract(node));
-
-            // Note: We don't recurse into the class node for other classes
-            // unless we want to support nested classes, but they would be
-            // separate components in our model for now.
-            // For now, let's allow recursion to find nested types if they exist.
         }
         else if (IsType(node, "Import"))
         {

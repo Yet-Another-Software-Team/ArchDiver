@@ -2,6 +2,7 @@ using ArchDiver.Parser.Languages;
 using ArchDiver.Parser.Abstractions;
 using ArchDiver.Core.Abstractions;
 using ArchDiver.Parser.Parsing;
+using Microsoft.Extensions.Logging;
 
 namespace ArchDiver.Parser.Infrastructure;
 
@@ -10,7 +11,7 @@ namespace ArchDiver.Parser.Infrastructure;
 /// </summary>
 public static class Bootstrapper
 {
-    public static ICodeAnalysisEngine Initialize()
+    public static ICodeAnalysisEngine Initialize(ILoggerFactory loggerFactory)
     {
         var registry = new LanguageRegistry();
 
@@ -19,6 +20,6 @@ public static class Bootstrapper
         registry.Register(new PythonLanguageProvider());
         registry.Register(new JavaLanguageProvider());
 
-        return new ParserEngine(registry);
+        return new ParserEngine(registry, loggerFactory);
     }
 }

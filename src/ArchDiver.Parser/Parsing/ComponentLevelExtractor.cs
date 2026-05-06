@@ -1,67 +1,89 @@
 using ArchDiver.Parser.Abstractions;
 using ArchDiver.Core.Models;
+using Microsoft.Extensions.Logging;
 
 namespace ArchDiver.Parser.Parsing;
 
-public class ComponentLevelExtractor(ILanguageProvider provider)
+public class ComponentLevelExtractor(ILanguageProvider provider, ILoggerFactory loggerFactory)
 {
     private readonly ILanguageProvider _provider = provider;
+    private readonly ILoggerFactory _loggerFactory = loggerFactory;
 
     public ComponentResult Extract(AstNode classNode)
     {
         var result = new ComponentResult();
-        var fields = new List<string>();
+        var fields = new HashSet<string>();
+        var methodsWithNodes = new List<(MethodResult Result, AstNode Node)>();
 
-        ExtractMembers(classNode, result, fields);
+        ExtractMembers(classNode, result, fields, methodsWithNodes);
 
-        var lcomCalc = new LcomCalculator(_provider);
-        foreach (var method in result.Methods)
+        var lcomCalc = new LcomCalculator(_provider, _loggerFactory.CreateLogger<LcomCalculator>());
+        var methodFieldUsages = new List<HashSet<string>>();
+        var fieldList = fields.ToList();
+        result.Attribute = fieldList;
+
+        foreach (var (methodResult, methodNode) in methodsWithNodes)
         {
-            // method.Lcom = lcomCalc.Calculate(methodNode, fields);
+            var usedFields = lcomCalc.GetUsedFields(methodNode, fieldList);
+            methodFieldUsages.Add(usedFields);
+            methodResult.Lcom = lcomCalc.CalculateMethodLcom(methodResult.Name, usedFields, fieldList.Count);
         }
+
+        result.Lcom = lcomCalc.CalculateClassLcom(result.Name, methodFieldUsages, fieldList.Count);
 
         return result;
     }
 
-    private void ExtractMembers(AstNode node, ComponentResult component, List<string> fields)
+    private void ExtractMembers(AstNode node, ComponentResult component, HashSet<string> fields, List<(MethodResult Result, AstNode Node)> methodsWithNodes)
     {
-        // For C#, the identifier is a child of the class/interface declaration
-        if (string.IsNullOrEmpty(component.Name))
+        if (string.IsNullOrEmpty(component.Name) && IsType(node, "Class"))
         {
-            foreach (var child in node.Children)
-            {
-                if (IsType(child, "ClassName"))
-                {
-                    component.Name = child.Text;
-                    break;
-                }
-            }
+            component.Name = GetNamedChildText(node, "name") ?? "UnnamedComponent";
         }
 
-        if (IsType(node, "FieldName"))
+        if (IsType(node, "Field"))
         {
-            component.Attribute.Add(node.Text);
-            fields.Add(node.Text);
+            string? name = GetNamedChildText(node, "name");
+            if (name != null)
+            {
+                fields.Add(name);
+            }
+            if (name != null && node.Type != "field_declaration") return;
         }
         else if (IsType(node, "Method"))
         {
-            var method = new MethodResult { Name = GetMethodName(node) };
+            var method = new MethodResult
+            {
+                Name = GetNamedChildText(node, "name") ?? "UnknownMethod"
+            };
             component.Methods.Add(method);
+            methodsWithNodes.Add((method, node));
+            return;
         }
 
         foreach (var child in node.Children)
         {
-            ExtractMembers(child, component, fields);
+            ExtractMembers(child, component, fields, methodsWithNodes);
         }
     }
 
-    private string GetMethodName(AstNode methodNode)
+    private string? GetNamedChildText(AstNode node, string fieldName)
     {
-        foreach (var child in methodNode.Children)
+        foreach (var child in node.Children)
         {
-            if (IsType(child, "MethodName")) return child.Text;
+            if (child.FieldName == fieldName) return child.Text;
         }
-        return "Unknown";
+
+        foreach (var child in node.Children)
+        {
+            if (child.Type == "variable_declaration" || child.Type == "variable_declarator")
+            {
+                var nested = GetNamedChildText(child, fieldName);
+                if (nested != null) return nested;
+            }
+        }
+
+        return null;
     }
 
     private bool IsType(AstNode node, string concept)
