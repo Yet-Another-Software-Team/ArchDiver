@@ -14,7 +14,17 @@ public class ProjectConfig
 
     public class AnalysisConfig
     {
-        public List<string> IgnorePatterns { get; set; } = [".git", "bin", "obj", ".archdiver"];
+        // Standard glob patterns like .gitignore
+        public List<string> IgnorePatterns { get; set; } =
+        [
+            "**/.git/**",
+            "**/bin/**",
+            "**/obj/**",
+            "**/.archdiver/**",
+            "**/*.exe",
+            "**/*.dll",
+            "**/*.pdb"
+        ];
         public int MaxDepth { get; set; } = 10;
     }
 }
