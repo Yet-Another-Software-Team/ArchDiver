@@ -20,10 +20,16 @@ public class ConceptExtractor(ILanguageProvider provider)
 
     private void ExtractRec(AstNode node, List<ComponentResult> components, List<string> imports)
     {
+        // Check for Class, Interface, Struct, etc. (mapped to "Class" in NodeBindings)
         if (IsType(node, "Class"))
         {
             var compExtractor = new ComponentLevelExtractor(_provider);
             components.Add(compExtractor.Extract(node));
+
+            // Note: We don't recurse into the class node for other classes
+            // unless we want to support nested classes, but they would be
+            // separate components in our model for now.
+            // For now, let's allow recursion to find nested types if they exist.
         }
         else if (IsType(node, "Import"))
         {

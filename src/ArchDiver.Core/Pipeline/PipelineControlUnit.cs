@@ -17,6 +17,8 @@ public class PipelineControlUnit(
     private readonly ILogger<PipelineControlUnit> _logger = logger ?? throw new ArgumentNullException(nameof(logger));
     private readonly ICodeAnalysisEngine _analysisEngine = analysisEngine ?? throw new ArgumentNullException(nameof(analysisEngine));
 
+    public ContextStorage ContextStorage => _contextStorage;
+
     /// <summary>
     /// Processes source code and returns the extracted semantic concepts.
     /// </summary>

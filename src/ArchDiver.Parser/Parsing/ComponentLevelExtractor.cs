@@ -17,7 +17,6 @@ public class ComponentLevelExtractor(ILanguageProvider provider)
         var lcomCalc = new LcomCalculator(_provider);
         foreach (var method in result.Methods)
         {
-            // This is a simplified LCOM calculation placeholder
             // method.Lcom = lcomCalc.Calculate(methodNode, fields);
         }
 
@@ -26,11 +25,20 @@ public class ComponentLevelExtractor(ILanguageProvider provider)
 
     private void ExtractMembers(AstNode node, ComponentResult component, List<string> fields)
     {
-        if (IsType(node, "ClassName"))
+        // For C#, the identifier is a child of the class/interface declaration
+        if (string.IsNullOrEmpty(component.Name))
         {
-            component.Name = node.Text;
+            foreach (var child in node.Children)
+            {
+                if (IsType(child, "ClassName"))
+                {
+                    component.Name = child.Text;
+                    break;
+                }
+            }
         }
-        else if (IsType(node, "FieldName"))
+
+        if (IsType(node, "FieldName"))
         {
             component.Attribute.Add(node.Text);
             fields.Add(node.Text);

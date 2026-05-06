@@ -21,5 +21,5 @@ public class TomlConfigManager : IConfigManager
         File.WriteAllText(path, toml);
     }
 
-    public ProjectConfig GetDefault() => new ProjectConfig();
+    public ProjectConfig GetDefault() => new();
 }

@@ -4,12 +4,14 @@ using ArchDiver.Parser.Infrastructure;
 namespace ArchDiver.Parser.Languages;
 
 [NodeBinding("Method", "method_declaration", "constructor_declaration", "destructor_declaration", "operator_declaration", "conversion_operator_declaration")]
+[NodeBinding("MethodName", "identifier")]
 [NodeBinding("Class", "class_declaration", "struct_declaration", "record_declaration", "interface_declaration", "enum_declaration")]
+[NodeBinding("ClassName", "identifier")]
 [NodeBinding("Field", "field_declaration", "property_declaration", "event_declaration")]
+[NodeBinding("FieldName", "variable_designation", "identifier")]
 [NodeBinding("Import", "using_directive")]
 [NodeBinding("Identifier", "identifier", "qualified_name")]
 public class CSharpLanguageProvider : LanguageProviderBase
-
 {
     public override string LanguageId => "CSharp";
     public override string BaseLibraryName => "tree-sitter-c-sharp";

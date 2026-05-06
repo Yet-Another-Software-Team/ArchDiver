@@ -117,9 +117,12 @@ class Program
             string relativePath = Path.GetRelativePath(rootPath, filePath);
             string? directoryName = Path.GetDirectoryName(relativePath);
             string fileNameWithoutExtension = Path.GetFileNameWithoutExtension(relativePath);
-            string fileOutputDir = Path.Combine(outputRoot, directoryName ?? "", fileNameWithoutExtension);
 
-            exporter.Export(result, fileOutputDir);
+            string fileOutputDir = Path.Combine(outputRoot, directoryName ?? "");
+
+            // For DX and Graph construction, using Prefix.ComponentName is cleaner.
+            // We pass the source filename as the prefix.
+            exporter.Export(result, fileOutputDir, fileNameWithoutExtension);
         });
 
         explorer.Explore(rootPath);

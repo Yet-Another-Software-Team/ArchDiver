@@ -9,12 +9,30 @@ public class TomlExporter : IExporter
 {
     public void Export(FileAnalysisResult result, string outputDir)
     {
+        Export(result, outputDir, null);
+    }
+
+    /// <summary>
+    /// Exports the analysis results to TOML files.
+    /// </summary>
+    /// <param name="result">The analysis result.</param>
+    /// <param name="outputDir">The directory to save files in.</param>
+    /// <param name="namePrefix">Optional prefix for the filenames (e.g. the source filename).</param>
+    public void Export(FileAnalysisResult result, string outputDir, string? namePrefix = null)
+    {
         if (result == null) throw new ArgumentNullException(nameof(result));
         if (string.IsNullOrEmpty(outputDir)) throw new ArgumentException("Output directory cannot be empty.", nameof(outputDir));
 
         foreach (var comp in result.Components)
         {
-            string componentPath = Path.Combine(outputDir, $"{comp.Name}.toml");
+            string baseName = string.IsNullOrWhiteSpace(comp.Name) ? "unnamed_component" : comp.Name;
+
+            // If we have a prefix and it's not the same as the component name, use [Prefix].[ComponentName]
+            string fileName = (string.IsNullOrEmpty(namePrefix) || namePrefix == baseName)
+                ? baseName
+                : $"{namePrefix}.{baseName}";
+
+            string componentPath = Path.Combine(outputDir, $"{fileName}.toml");
             ExportComponent(comp, result.Imports, componentPath);
         }
     }
