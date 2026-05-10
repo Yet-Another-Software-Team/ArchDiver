@@ -15,6 +15,19 @@ public class ConceptExtractor(ILanguageProvider provider, ILoggerFactory loggerF
         var components = new List<ComponentResult>();
 
         ExtractRec(root, components, result.Imports);
+
+        // Handle languages like Python where the file itself can act as a module/component
+        if (components.Count == 0 && HasStrayMethods(root))
+        {
+            var compExtractor = new ComponentLevelExtractor(_provider, _loggerFactory);
+            var moduleComponent = compExtractor.Extract(root);
+            if (string.IsNullOrEmpty(moduleComponent.Name) || moduleComponent.Name == "UnnamedComponent")
+            {
+                moduleComponent.Name = "GlobalModule";
+            }
+            components.Add(moduleComponent);
+        }
+
         result.Components = components;
 
         return result;
@@ -36,6 +49,24 @@ public class ConceptExtractor(ILanguageProvider provider, ILoggerFactory loggerF
         {
             ExtractRec(child, components, imports);
         }
+    }
+
+    private bool HasStrayMethods(AstNode node)
+    {
+        if (IsType(node, "Method"))
+            return true;
+
+        // Stop checking if we hit a Class, since methods inside a Class are not stray
+        if (IsType(node, "Class"))
+            return false;
+
+        foreach (var child in node.Children)
+        {
+            if (HasStrayMethods(child))
+                return true;
+        }
+
+        return false;
     }
 
     private void ExtractImportNames(AstNode node, List<string> imports)
