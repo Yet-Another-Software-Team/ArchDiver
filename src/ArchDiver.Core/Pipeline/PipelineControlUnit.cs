@@ -25,25 +25,60 @@ public partial class PipelineControlUnit(
     private readonly GraphBuilder _graphBuilder = graphBuilder ?? new GraphBuilder();
 
     private static void LogAnalyzingFile(ILogger logger, string filePath)
-        => logger.LogDebug("Analyzing {FilePath}...", filePath);
+    {
+        if (logger.IsEnabled(LogLevel.Debug))
+        {
+            logger.LogDebug("Analyzing {FilePath}...", filePath);
+        }
+    }
 
     private static void LogConstructingGraph(ILogger logger, string rootDirectory)
-        => logger.LogDebug("Constructing code graph from {RootDirectory}...", rootDirectory);
+    {
+        if (logger.IsEnabled(LogLevel.Debug))
+        {
+            logger.LogDebug("Constructing code graph from {RootDirectory}...", rootDirectory);
+        }
+    }
 
     private static void LogGraphStored(ILogger logger, int nodeCount, int edgeCount)
-        => logger.LogDebug("Code graph stored in ContextStorage (Nodes: {NodeCount}, Edges: {EdgeCount}).", nodeCount, edgeCount);
+    {
+        if (logger.IsEnabled(LogLevel.Debug))
+        {
+            logger.LogDebug("Code graph stored in ContextStorage (Nodes: {NodeCount}, Edges: {EdgeCount}).", nodeCount, edgeCount);
+        }
+    }
 
     private static void LogRunningSmellDetectionWithModel(ILogger logger, string modelPath)
-        => logger.LogDebug("Running smell detection using model: {ModelPath}", modelPath);
+    {
+        if (logger.IsEnabled(LogLevel.Debug))
+        {
+            logger.LogDebug("Running smell detection using model: {ModelPath}", modelPath);
+        }
+    }
 
     private static void LogRunningSmellDetectionBuiltIn(ILogger logger)
-        => logger.LogDebug("Running smell detection using built-in model");
+    {
+        if (logger.IsEnabled(LogLevel.Debug))
+        {
+            logger.LogDebug("Running smell detection using built-in model");
+        }
+    }
 
     private static void LogRawPredictionsHeader(ILogger logger)
-        => logger.LogDebug("Raw prediction results:");
+    {
+        if (logger.IsEnabled(LogLevel.Debug))
+        {
+            logger.LogDebug("Raw prediction results:");
+        }
+    }
 
     private static void LogNodePrediction(ILogger logger, int nodeId, float score)
-        => logger.LogDebug("  Node {NodeId}: {Score}", nodeId, score);
+    {
+        if (logger.IsEnabled(LogLevel.Debug))
+        {
+            logger.LogDebug("  Node {NodeId}: {Score}", nodeId, score);
+        }
+    }
 
     public ContextStorage ContextStorage => _contextStorage;
 

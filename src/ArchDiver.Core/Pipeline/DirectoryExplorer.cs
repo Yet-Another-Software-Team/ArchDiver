@@ -23,16 +23,36 @@ public partial class DirectoryExplorer
     private readonly ConcurrentBag<(string FilePath, Exception Exception)> _errors = new();
 
     private static void LogSkippingIgnoredDirectory(ILogger logger, string relativePath)
-        => logger.LogDebug("Skipping ignored directory: {RelativePath}", relativePath);
+    {
+        if (logger.IsEnabled(LogLevel.Debug))
+        {
+            logger.LogDebug("Skipping ignored directory: {RelativePath}", relativePath);
+        }
+    }
 
     private static void LogSkippingIgnoredFile(ILogger logger, string relativeFilePath)
-        => logger.LogDebug("Skipping ignored file: {RelativeFilePath}", relativeFilePath);
+    {
+        if (logger.IsEnabled(LogLevel.Debug))
+        {
+            logger.LogDebug("Skipping ignored file: {RelativeFilePath}", relativeFilePath);
+        }
+    }
 
     private static void LogAccessFailed(ILogger logger, Exception ex, string currentPath)
-        => logger.LogWarning(ex, "Failed to access {CurrentPath}", currentPath);
+    {
+        if (logger.IsEnabled(LogLevel.Warning))
+        {
+            logger.LogWarning(ex, "Failed to access {CurrentPath}", currentPath);
+        }
+    }
 
     private static void LogProcessingError(ILogger logger, Exception ex, string filePath)
-        => logger.LogError(ex, "Error processing {FilePath}", filePath);
+    {
+        if (logger.IsEnabled(LogLevel.Error))
+        {
+            logger.LogError(ex, "Error processing {FilePath}", filePath);
+        }
+    }
 
     public IEnumerable<(string FilePath, Exception Exception)> Errors => _errors;
 

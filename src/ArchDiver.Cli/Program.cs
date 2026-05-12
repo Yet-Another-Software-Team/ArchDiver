@@ -28,31 +28,76 @@ partial class Program
 
 
     private static void LogConfigCreated(Microsoft.Extensions.Logging.ILogger logger, string configFileName)
-        => logger.LogInformation("Created default configuration: {ConfigFileName}", configFileName);
+    {
+        if (logger.IsEnabled(LogLevel.Information))
+        {
+            logger.LogInformation("Created default configuration: {ConfigFileName}", configFileName);
+        }
+    }
 
     private static void LogNoConfigFound(Microsoft.Extensions.Logging.ILogger logger)
-        => logger.LogWarning("No config file found. Using defaults.");
+    {
+        if (logger.IsEnabled(LogLevel.Warning))
+        {
+            logger.LogWarning("No config file found. Using defaults.");
+        }
+    }
 
     private static void LogMissingDirectory(Microsoft.Extensions.Logging.ILogger logger)
-        => logger.LogError("Missing directory path.");
+    {
+        if (logger.IsEnabled(LogLevel.Error))
+        {
+            logger.LogError("Missing directory path.");
+        }
+    }
 
     private static void LogDirectoryNotFound(Microsoft.Extensions.Logging.ILogger logger, string rootPath)
-        => logger.LogError("Directory not found: {RootPath}", rootPath);
+    {
+        if (logger.IsEnabled(LogLevel.Error))
+        {
+            logger.LogError("Directory not found: {RootPath}", rootPath);
+        }
+    }
 
     private static void LogModelNotFound(Microsoft.Extensions.Logging.ILogger logger, string modelPath)
-        => logger.LogError("Model not found: {ModelPath}", modelPath);
+    {
+        if (logger.IsEnabled(LogLevel.Error))
+        {
+            logger.LogError("Model not found: {ModelPath}", modelPath);
+        }
+    }
 
     private static void LogExploring(Microsoft.Extensions.Logging.ILogger logger, string rootPath, int maxDepth)
-        => logger.LogInformation("Exploring: {RootPath} (Max Depth: {MaxDepth})", rootPath, maxDepth);
+    {
+        if (logger.IsEnabled(LogLevel.Information))
+        {
+            logger.LogInformation("Exploring: {RootPath} (Max Depth: {MaxDepth})", rootPath, maxDepth);
+        }
+    }
 
     private static void LogExplorationComplete(Microsoft.Extensions.Logging.ILogger logger, string outputRoot)
-        => logger.LogInformation("Exploration complete. Results saved in {OutputRoot}", outputRoot);
+    {
+        if (logger.IsEnabled(LogLevel.Information))
+        {
+            logger.LogInformation("Exploration complete. Results saved in {OutputRoot}", outputRoot);
+        }
+    }
 
     private static void LogAnalyzingWithModel(Microsoft.Extensions.Logging.ILogger logger, string rootPath, int maxDepth, string modelPath)
-        => logger.LogInformation("Analyzing: {RootPath} (Max Depth: {MaxDepth}) with model {ModelPath}", rootPath, maxDepth, modelPath);
+    {
+        if (logger.IsEnabled(LogLevel.Information))
+        {
+            logger.LogInformation("Analyzing: {RootPath} (Max Depth: {MaxDepth}) with model {ModelPath}", rootPath, maxDepth, modelPath);
+        }
+    }
 
     private static void LogAnalyzingWithBuiltInModel(Microsoft.Extensions.Logging.ILogger logger, string rootPath, int maxDepth)
-        => logger.LogInformation("Analyzing: {RootPath} (Max Depth: {MaxDepth}) with built-in model", rootPath, maxDepth);
+    {
+        if (logger.IsEnabled(LogLevel.Information))
+        {
+            logger.LogInformation("Analyzing: {RootPath} (Max Depth: {MaxDepth}) with built-in model", rootPath, maxDepth);
+        }
+    }
 
     static void Main(string[] args)
     {
