@@ -79,6 +79,17 @@ public class PipelineControlUnit(
         }
 
         using var detector = new SmellDetector(modelPath);
-        return detector.AnalyzeGraph(graph);
+        var predictions = detector.AnalyzeGraph(graph);
+
+        if (_logger.IsEnabled(LogLevel.Debug))
+        {
+            _logger.LogDebug("Raw prediction results:");
+            foreach (var kvp in predictions)
+            {
+                _logger.LogDebug("  Node {NodeId}: {Score}", kvp.Key, kvp.Value);
+            }
+        }
+
+        return predictions;
     }
 }
