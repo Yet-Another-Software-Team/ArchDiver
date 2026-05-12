@@ -3,7 +3,7 @@ using ArchDiver.Parser.Abstractions;
 namespace ArchDiver.Parser.Infrastructure;
 
 /// <summary>
-/// Central registry for language providers (The Kernel).
+/// Registry for language providers.
 /// </summary>
 public class LanguageRegistry : ILanguageRegistry
 {

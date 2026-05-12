@@ -4,10 +4,16 @@ using Microsoft.Extensions.Logging;
 
 namespace ArchDiver.Parser.Parsing;
 
-public class LcomCalculator(ILanguageProvider provider, ILogger<LcomCalculator> logger)
+public partial class LcomCalculator(ILanguageProvider provider, ILogger<LcomCalculator> logger)
 {
     private readonly ILanguageProvider _provider = provider;
     private readonly ILogger<LcomCalculator> _logger = logger;
+
+    [LoggerMessage(Level = LogLevel.Debug, Message = "LCOM for '{ComponentName}' cannot be calculated: No fields found.")]
+    static partial void LogNoFieldsFound(ILogger logger, string componentName);
+
+    [LoggerMessage(Level = LogLevel.Debug, Message = "LCOM for '{ComponentName}' is 0: Single method or no methods found.")]
+    static partial void LogSingleMethodOrNoMethods(ILogger logger, string componentName);
 
     /// <summary>
     /// Calculates the Lack of Cohesion in Methods (LCOM) for a component.
@@ -17,19 +23,13 @@ public class LcomCalculator(ILanguageProvider provider, ILogger<LcomCalculator> 
     {
         if (totalFields == 0)
         {
-            if (_logger.IsEnabled(LogLevel.Debug))
-            {
-                _logger.LogDebug("LCOM for '{ComponentName}' cannot be calculated: No fields found.", componentName);
-            }
+            LogNoFieldsFound(_logger, componentName);
             return 0;
         }
 
         if (methodFieldUsages.Count <= 1)
         {
-            if (_logger.IsEnabled(LogLevel.Debug))
-            {
-                _logger.LogDebug("LCOM for '{ComponentName}' is 0: Single method or no methods found.", componentName);
-            }
+            LogSingleMethodOrNoMethods(_logger, componentName);
             return 0;
         }
 

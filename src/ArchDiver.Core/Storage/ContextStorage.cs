@@ -4,8 +4,7 @@ using ArchDiver.Shared.Models;
 namespace ArchDiver.Core.Storage;
 
 /// <summary>
-/// Serves as the centralized storage for maintaining state, parsed data,
-/// and analysis results across the various components of the pipeline.
+/// Stores state, parsed data, and analysis results across the pipeline.
 /// </summary>
 public class ContextStorage
 {

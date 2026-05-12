@@ -32,7 +32,6 @@ public class GraphBuilder
             string[] filenames = Directory.GetFiles(absDir);
             var validFiles = filenames.Where(f => f.EndsWith(".toml", StringComparison.OrdinalIgnoreCase)).ToArray();
 
-            // 1. Register Component (Folder) node and features
             graph.Nodes.Add(new Node
             {
                 Id = currCompId,
@@ -41,7 +40,6 @@ public class GraphBuilder
                 Features = new double[] { dirnames.Length + validFiles.Length }
             });
 
-            // 2. Process subdirectories (Component contains Component)
             foreach (var dirname in dirnames)
             {
                 var subDir = Path.GetFullPath(dirname);
@@ -60,7 +58,6 @@ public class GraphBuilder
                 });
             }
 
-            // 3. Process TOML files (Component contains Class)
             foreach (var file in validFiles)
             {
                 var tomlContent = File.ReadAllText(file);
@@ -87,7 +84,6 @@ public class GraphBuilder
                     Features = features
                 });
 
-                // Record Containment Edge
                 graph.Edges.Add(new Edge
                 {
                     SourceId = currCompId,
@@ -95,7 +91,6 @@ public class GraphBuilder
                     Type = EdgeType.ComponentContainsClass
                 });
 
-                // Gather Imports
                 var imports = new HashSet<string>();
                 if (tomlTable.TryGetValue("imports", out var importsObj) && importsObj is TomlArray importsArray)
                 {
@@ -110,17 +105,14 @@ public class GraphBuilder
                 classDependencies[className] = imports;
             }
 
-            // Recursively walk into subdirectories
             foreach (var dirname in dirnames)
             {
                 Walk(dirname);
             }
         }
 
-        // Pass 1: Walk the directory tree
         Walk(rootDirectory);
 
-        // Pass 2: Build Class Imports Class Edges
         var simpleNameToId = classNameToId.ToDictionary(
             kvp => kvp.Key.Split('.').Last(),
             kvp => kvp.Value);

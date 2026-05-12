@@ -6,9 +6,9 @@ using System.Collections.Concurrent;
 namespace ArchDiver.Core.Pipeline;
 
 /// <summary>
-/// Orchestrates the recursive exploration of a directory, triggering the pipeline for each file.
+/// Explores a directory recursively and triggers the analysis pipeline for each file.
 /// </summary>
-public class DirectoryExplorer
+public partial class DirectoryExplorer
 {
     private readonly PipelineControlUnit _pipeline;
     private readonly ILogger<DirectoryExplorer> _logger;
@@ -16,6 +16,18 @@ public class DirectoryExplorer
     private readonly Matcher _ignoreMatcher;
     private readonly Action<string, FileAnalysisResult>? _onFileProcessed;
     private readonly ConcurrentBag<(string FilePath, Exception Exception)> _errors = new();
+
+    [LoggerMessage(Level = LogLevel.Debug, Message = "Skipping ignored directory: {RelativePath}")]
+    static partial void LogSkippingIgnoredDirectory(ILogger logger, string relativePath);
+
+    [LoggerMessage(Level = LogLevel.Debug, Message = "Skipping ignored file: {RelativeFilePath}")]
+    static partial void LogSkippingIgnoredFile(ILogger logger, string relativeFilePath);
+
+    [LoggerMessage(Level = LogLevel.Warning, Message = "Failed to access {CurrentPath}")]
+    static partial void LogAccessFailed(ILogger logger, Exception ex, string currentPath);
+
+    [LoggerMessage(Level = LogLevel.Error, Message = "Error processing {FilePath}")]
+    static partial void LogProcessingError(ILogger logger, Exception ex, string filePath);
 
     public IEnumerable<(string FilePath, Exception Exception)> Errors => _errors;
 
@@ -67,10 +79,7 @@ public class DirectoryExplorer
         // If it's not the root itself, check if this directory is ignored
         if (relativePath != "." && IsIgnored(relativePath))
         {
-            if (_logger.IsEnabled(LogLevel.Debug))
-            {
-                _logger.LogDebug("Skipping ignored directory: {RelativePath}", relativePath);
-            }
+            LogSkippingIgnoredDirectory(_logger, relativePath);
             return;
         }
 
@@ -82,10 +91,7 @@ public class DirectoryExplorer
                 string relativeFilePath = Path.GetRelativePath(rootPath, file);
                 if (IsIgnored(relativeFilePath))
                 {
-                    if (_logger.IsEnabled(LogLevel.Debug))
-                    {
-                        _logger.LogDebug("Skipping ignored file: {RelativeFilePath}", relativeFilePath);
-                    }
+                    LogSkippingIgnoredFile(_logger, relativeFilePath);
                     continue;
                 }
 
@@ -99,7 +105,7 @@ public class DirectoryExplorer
         }
         catch (Exception ex)
         {
-            _logger.LogWarning(ex, "Failed to access {CurrentPath}", currentPath);
+            LogAccessFailed(_logger, ex, currentPath);
         }
     }
 
@@ -129,7 +135,7 @@ public class DirectoryExplorer
         catch (Exception ex)
         {
             _errors.Add((filePath, ex));
-            _logger.LogError(ex, "Error processing {FilePath}", filePath);
+            LogProcessingError(_logger, ex, filePath);
         }
     }
 }

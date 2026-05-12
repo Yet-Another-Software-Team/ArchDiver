@@ -11,7 +11,7 @@ using Serilog;
 
 namespace ArchDiver.Cli;
 
-class Program
+partial class Program
 {
     private static readonly string _configFileName = "archdiver.toml";
     private static readonly string _outputDir = ".archdiver/out";
@@ -19,6 +19,33 @@ class Program
     private static ILogger<Program> _logger = null!;
     private static ICodeAnalysisEngine _analysisEngine = null!;
     private static readonly IConfigManager _configManager = new TomlConfigManager();
+
+    [LoggerMessage(Level = LogLevel.Information, Message = "Created default configuration: {ConfigFileName}")]
+    static partial void LogConfigCreated(Microsoft.Extensions.Logging.ILogger logger, string configFileName);
+
+    [LoggerMessage(Level = LogLevel.Warning, Message = "No config file found. Using defaults.")]
+    static partial void LogNoConfigFound(Microsoft.Extensions.Logging.ILogger logger);
+
+    [LoggerMessage(Level = LogLevel.Error, Message = "Missing directory path.")]
+    static partial void LogMissingDirectory(Microsoft.Extensions.Logging.ILogger logger);
+
+    [LoggerMessage(Level = LogLevel.Error, Message = "Directory not found: {RootPath}")]
+    static partial void LogDirectoryNotFound(Microsoft.Extensions.Logging.ILogger logger, string rootPath);
+
+    [LoggerMessage(Level = LogLevel.Error, Message = "Model not found: {ModelPath}")]
+    static partial void LogModelNotFound(Microsoft.Extensions.Logging.ILogger logger, string modelPath);
+
+    [LoggerMessage(Level = LogLevel.Information, Message = "Exploring: {RootPath} (Max Depth: {MaxDepth})")]
+    static partial void LogExploring(Microsoft.Extensions.Logging.ILogger logger, string rootPath, int maxDepth);
+
+    [LoggerMessage(Level = LogLevel.Information, Message = "Exploration complete. Results saved in {OutputRoot}")]
+    static partial void LogExplorationComplete(Microsoft.Extensions.Logging.ILogger logger, string outputRoot);
+
+    [LoggerMessage(Level = LogLevel.Information, Message = "Analyzing: {RootPath} (Max Depth: {MaxDepth}) with model {ModelPath}")]
+    static partial void LogAnalyzingWithModel(Microsoft.Extensions.Logging.ILogger logger, string rootPath, int maxDepth, string modelPath);
+
+    [LoggerMessage(Level = LogLevel.Information, Message = "Analyzing: {RootPath} (Max Depth: {MaxDepth}) with built-in model")]
+    static partial void LogAnalyzingWithBuiltInModel(Microsoft.Extensions.Logging.ILogger logger, string rootPath, int maxDepth);
 
     static void Main(string[] args)
     {
@@ -77,13 +104,13 @@ class Program
         if (args.Length > 1 && args[1].ToLower() == "create")
         {
             _configManager.Save(_configManager.GetDefault(), _configFileName);
-            _logger.LogInformation("Created default configuration: {ConfigFileName}", _configFileName);
+            LogConfigCreated(_logger, _configFileName);
             return;
         }
 
         if (!File.Exists(_configFileName))
         {
-            _logger.LogWarning("No config file found. Using defaults.");
+            LogNoConfigFound(_logger);
             DisplayConfig(_configManager.GetDefault());
         }
         else
@@ -108,10 +135,10 @@ class Program
 
     static void HandleExplore(string[] args, ProjectConfig config)
     {
-        if (args.Length < 2) { _logger.LogError("Missing directory path."); return; }
+        if (args.Length < 2) { LogMissingDirectory(_logger); return; }
 
         string rootPath = Path.GetFullPath(args[1]);
-        if (!Directory.Exists(rootPath)) { _logger.LogError("Directory not found: {RootPath}", rootPath); return; }
+        if (!Directory.Exists(rootPath)) { LogDirectoryNotFound(_logger, rootPath); return; }
 
         int maxDepth = config.Analysis.MaxDepth;
         for (int i = 0; i < args.Length; i++)
@@ -124,7 +151,7 @@ class Program
         if (Directory.Exists(outputRoot)) Directory.Delete(outputRoot, true);
         Directory.CreateDirectory(outputRoot);
 
-        _logger.LogInformation("Exploring: {RootPath} (Max Depth: {MaxDepth})", rootPath, maxDepth);
+        LogExploring(_logger, rootPath, maxDepth);
 
         var pipelineLogger = _loggerFactory.CreateLogger<PipelineControlUnit>();
         var explorerLogger = _loggerFactory.CreateLogger<DirectoryExplorer>();
@@ -160,7 +187,7 @@ class Program
         }
 
         AnsiConsole.MarkupLine("[green]Exploration complete.[/] Results saved in [blue]{0}[/]", outputRoot);
-        _logger.LogInformation("Exploration complete. Results saved in {OutputRoot}", outputRoot);
+        LogExplorationComplete(_logger, outputRoot);
     }
 
     static void HandleAnalyze(string[] args, ProjectConfig config)
@@ -193,8 +220,8 @@ class Program
             }
         }
 
-        if (!Directory.Exists(rootPath)) { _logger.LogError("Directory not found: {RootPath}", rootPath); return; }
-        if (modelPath != null && !File.Exists(modelPath)) { _logger.LogError("Model not found: {ModelPath}", modelPath); return; }
+        if (!Directory.Exists(rootPath)) { LogDirectoryNotFound(_logger, rootPath); return; }
+        if (modelPath != null && !File.Exists(modelPath)) { LogModelNotFound(_logger, modelPath); return; }
 
         string outputRoot = Path.Combine(rootPath, _outputDir);
         if (Directory.Exists(outputRoot)) Directory.Delete(outputRoot, true);
@@ -202,11 +229,11 @@ class Program
 
         if (modelPath != null)
         {
-            _logger.LogInformation("Analyzing: {RootPath} (Max Depth: {MaxDepth}) with model {ModelPath}", rootPath, maxDepth, modelPath);
+            LogAnalyzingWithModel(_logger, rootPath, maxDepth, modelPath);
         }
         else
         {
-            _logger.LogInformation("Analyzing: {RootPath} (Max Depth: {MaxDepth}) with built-in model", rootPath, maxDepth);
+            LogAnalyzingWithBuiltInModel(_logger, rootPath, maxDepth);
         }
 
         var pipelineLogger = _loggerFactory.CreateLogger<PipelineControlUnit>();

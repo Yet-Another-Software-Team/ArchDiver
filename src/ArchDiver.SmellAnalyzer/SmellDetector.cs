@@ -58,14 +58,12 @@ public class SmellDetector : IDisposable
         if (graph == null || graph.Nodes.Count == 0)
             return new Dictionary<int, float>();
 
-        // We have heterogeneous nodes: Class and Component
         var classNodes = graph.Nodes.Where(n => n.Type == NodeType.Class).ToList();
         var compNodes = graph.Nodes.Where(n => n.Type == NodeType.Component).ToList();
 
         int classFeaturesLength = classNodes.FirstOrDefault()?.Features.Length ?? 6;
         int compFeaturesLength = compNodes.FirstOrDefault()?.Features.Length ?? 1;
 
-        // Features Tensors
         var xClass = new DenseTensor<float>(new[] { Math.Max(1, classNodes.Count), classFeaturesLength });
         var xComp = new DenseTensor<float>(new[] { Math.Max(1, compNodes.Count), compFeaturesLength });
 
@@ -84,11 +82,6 @@ public class SmellDetector : IDisposable
             for (int j = 0; j < compFeaturesLength; j++)
                 xComp[i, j] = (float)compNodes[i].Features[j];
         }
-
-        // We have heterogeneous edges:
-        // edge_cc: Component -> Component
-        // edge_cl: Component -> Class
-        // edge_ll: Class -> Class (Imports)
 
         var edgesCC = graph.Edges.Where(e => e.Type == EdgeType.ComponentContainsComponent).ToList();
         var edgesCL = graph.Edges.Where(e => e.Type == EdgeType.ComponentContainsClass).ToList();
