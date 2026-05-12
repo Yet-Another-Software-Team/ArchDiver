@@ -1,6 +1,6 @@
 using System.Collections.Generic;
 
-namespace ArchDiver.GraphConstruction.Models;
+namespace ArchDiver.Shared.Models;
 
 public class Graph
 {

@@ -1,4 +1,4 @@
-namespace ArchDiver.GraphConstruction.Models;
+namespace ArchDiver.Shared.Models;
 
 public enum EdgeType
 {

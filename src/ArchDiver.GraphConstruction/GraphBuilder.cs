@@ -4,7 +4,7 @@ using System.IO;
 using System.Linq;
 using Tomlyn;
 using Tomlyn.Model;
-using ArchDiver.GraphConstruction.Models;
+using ArchDiver.Shared.Models;
 
 namespace ArchDiver.GraphConstruction;
 
@@ -149,7 +149,7 @@ public class GraphBuilder
         return graph;
     }
 
-    private double[] ExtractClassFeatures(TomlTable data)
+    private static double[] ExtractClassFeatures(TomlTable data)
     {
         double classLcom = 0.0;
         if (data.TryGetValue("lcom", out var lcomObj))

@@ -2,6 +2,7 @@
 
   <ItemGroup>
     <ProjectReference Include="..\ArchDiver.Core\ArchDiver.Core.csproj" />
+    <ProjectReference Include="..\ArchDiver.Shared\ArchDiver.Shared.csproj" />
   </ItemGroup>
 
   <ItemGroup>
