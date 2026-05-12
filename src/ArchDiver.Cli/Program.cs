@@ -54,6 +54,7 @@ class Program
         Console.WriteLine("Commands:");
         Console.WriteLine("  explore <path>               Recursively parses supported files.");
         Console.WriteLine("  analyze <path> [model_path]  Runs full pipeline and prints smell predictions. If no model path is specified, uses the built-in model.");
+        Console.WriteLine("                               Pass --show-all to display all predictions, not just those exceeding the threshold.");
         Console.WriteLine("  config                       Shows current configuration.");
         Console.WriteLine("  config create                Creates a default configuration file.");
         Console.WriteLine($"\nSupported Languages: {string.Join(", ", _analysisEngine.GetSupportedLanguages())}");
@@ -137,22 +138,34 @@ class Program
     {
         if (args.Length < 2)
         {
-            Console.WriteLine("Missing directory path. Usage: archdiver analyze <path> [model_path]");
+            Console.WriteLine("Missing directory path. Usage: archdiver analyze <path> [model_path] [--show-all]");
             return;
         }
 
         string rootPath = Path.GetFullPath(args[1]);
-        string? modelPath = args.Length > 2 ? Path.GetFullPath(args[2]) : null;
+        string? modelPath = null;
+        bool showAll = false;
+        int maxDepth = config.Analysis.MaxDepth;
+
+        for (int i = 2; i < args.Length; i++)
+        {
+            if (args[i] == "--show-all")
+            {
+                showAll = true;
+            }
+            else if (args[i] == "--max-depth" && i + 1 < args.Length && int.TryParse(args[i + 1], out int depth))
+            {
+                maxDepth = depth;
+                i++; // Skip the depth value in the next iteration
+            }
+            else if (!args[i].StartsWith("--") && modelPath == null)
+            {
+                modelPath = Path.GetFullPath(args[i]);
+            }
+        }
 
         if (!Directory.Exists(rootPath)) { _logger.LogError("Directory not found: {RootPath}", rootPath); return; }
         if (modelPath != null && !File.Exists(modelPath)) { _logger.LogError("Model not found: {ModelPath}", modelPath); return; }
-
-        int maxDepth = config.Analysis.MaxDepth;
-        for (int i = 0; i < args.Length; i++)
-        {
-            if (args[i] == "--max-depth" && i + 1 < args.Length && int.TryParse(args[i + 1], out int depth))
-                maxDepth = depth;
-        }
 
         string outputRoot = Path.Combine(rootPath, _outputDir);
         if (Directory.Exists(outputRoot)) Directory.Delete(outputRoot, true);
@@ -190,6 +203,8 @@ class Program
 
         Console.WriteLine("\n--- Smell Analysis Predictions ---");
         Console.WriteLine($"Threshold: >= {config.Analysis.ConfidenceThreshold:F2}");
+
+        bool anyDetected = false;
         foreach (var kvp in predictions)
         {
             var node = graph.Nodes.FirstOrDefault(n => n.Id == kvp.Key);
@@ -198,11 +213,17 @@ class Program
             if (kvp.Value >= config.Analysis.ConfidenceThreshold)
             {
                 Console.WriteLine($"{nodeName}: {kvp.Value:F4} - [Feature Concentration Detected]");
+                anyDetected = true;
             }
-            else
+            else if (showAll)
             {
                 Console.WriteLine($"{nodeName}: {kvp.Value:F4}");
             }
+        }
+
+        if (!anyDetected && !showAll)
+        {
+            Console.WriteLine("No Architecture smell detected. (Pass --show-all to see all predictions)");
         }
         Console.WriteLine("----------------------------------");
     }
