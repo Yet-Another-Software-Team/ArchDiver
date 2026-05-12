@@ -140,8 +140,6 @@ public class SmellDetector : IDisposable
 
         var predictions = new Dictionary<int, float>();
 
-        // Output presumably maps back to classes? The error might occur here depending on the shape of the output.
-        // Let's assume output maps to classes for now
         int maxOutputs = Math.Min(classNodes.Count, outputTensor.Dimensions[0]);
         for (int i = 0; i < maxOutputs; i++)
         {

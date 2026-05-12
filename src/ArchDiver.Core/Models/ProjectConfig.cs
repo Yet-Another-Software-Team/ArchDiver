@@ -10,6 +10,7 @@ public class ProjectConfig
     public class LoggingConfig
     {
         public LogLevel MinimumLevel { get; set; } = LogLevel.Information;
+        public string? LogFilePath { get; set; } = "archdiver.log";
     }
 
     public class AnalysisConfig

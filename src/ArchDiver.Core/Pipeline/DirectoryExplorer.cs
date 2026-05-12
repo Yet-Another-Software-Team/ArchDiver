@@ -1,6 +1,7 @@
 using Microsoft.Extensions.Logging;
 using Microsoft.Extensions.FileSystemGlobbing;
 using ArchDiver.Core.Models;
+using System.Collections.Concurrent;
 
 namespace ArchDiver.Core.Pipeline;
 
@@ -14,6 +15,9 @@ public class DirectoryExplorer
     private readonly int _maxDepth;
     private readonly Matcher _ignoreMatcher;
     private readonly Action<string, FileAnalysisResult>? _onFileProcessed;
+    private readonly ConcurrentBag<(string FilePath, Exception Exception)> _errors = new();
+
+    public IEnumerable<(string FilePath, Exception Exception)> Errors => _errors;
 
     public DirectoryExplorer(
         PipelineControlUnit pipeline,
@@ -39,6 +43,7 @@ public class DirectoryExplorer
     /// </summary>
     public void Explore(string rootPath, Action<int, int>? progressCallback = null)
     {
+        _errors.Clear();
         var filesToProcess = new List<string>();
         CollectFiles(rootPath, rootPath, 0, filesToProcess);
 
@@ -100,10 +105,8 @@ public class DirectoryExplorer
 
     private bool IsIgnored(string relativePath)
     {
-        // Microsoft.Extensions.FileSystemGlobbing uses '/' even on Windows
         string normalizedPath = relativePath.Replace("\\", "/");
 
-        // Matcher.Match returns results if the path matches any of the patterns
         return _ignoreMatcher.Match(normalizedPath).HasMatches;
     }
 
@@ -114,7 +117,6 @@ public class DirectoryExplorer
             string sourceCode = File.ReadAllText(filePath);
             if (string.IsNullOrWhiteSpace(sourceCode))
             {
-                // Skip empty files
                 return;
             }
             var result = _pipeline.CreateIR(sourceCode, filePath);
@@ -123,11 +125,12 @@ public class DirectoryExplorer
         }
         catch (NotSupportedException)
         {
-            // Silently skip
         }
         catch (Exception ex)
         {
+            _errors.Add((filePath, ex));
             _logger.LogError(ex, "Error processing {FilePath}", filePath);
         }
     }
 }
+

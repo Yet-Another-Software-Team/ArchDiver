@@ -7,6 +7,7 @@ using ArchDiver.Core.Models;
 using ArchDiver.Parser.Infrastructure;
 using ArchDiver.Shared.Models;
 using Spectre.Console;
+using Serilog;
 
 namespace ArchDiver.Cli;
 
@@ -25,7 +26,7 @@ class Program
             ? _configManager.Load(_configFileName)
             : _configManager.GetDefault();
 
-        ConfigureLogging(config.Logging.MinimumLevel);
+        ConfigureLogging(config);
         _analysisEngine = Bootstrapper.Initialize(_loggerFactory);
 
         if (args.Length < 1) { PrintUsage(); return; }
@@ -39,12 +40,21 @@ class Program
         }
     }
 
-    static void ConfigureLogging(LogLevel minLevel)
+    static void ConfigureLogging(ProjectConfig config)
     {
+        var serilogLoggerConfiguration = new Serilog.LoggerConfiguration()
+            .MinimumLevel.Is((Serilog.Events.LogEventLevel)config.Logging.MinimumLevel);
+
+        if (!string.IsNullOrWhiteSpace(config.Logging.LogFilePath))
+        {
+            serilogLoggerConfiguration.WriteTo.File(config.Logging.LogFilePath);
+        }
+
+        Serilog.Log.Logger = serilogLoggerConfiguration.CreateLogger();
+
         _loggerFactory = LoggerFactory.Create(builder =>
         {
-            builder.AddConsole();
-            builder.SetMinimumLevel(minLevel);
+            builder.AddSerilog(Serilog.Log.Logger);
         });
         _logger = _loggerFactory.CreateLogger<Program>();
     }
@@ -143,6 +153,13 @@ class Program
                 pipeline.BuildAndStoreGraph(outputRoot);
             });
 
+        if (explorer.Errors.Any())
+        {
+            ReportFailures(explorer, rootPath, config);
+            return;
+        }
+
+        AnsiConsole.MarkupLine("[green]Exploration complete.[/] Results saved in [blue]{0}[/]", outputRoot);
         _logger.LogInformation("Exploration complete. Results saved in {OutputRoot}", outputRoot);
     }
 
@@ -225,6 +242,12 @@ class Program
                 predictions = pipeline.AnalyzeSmells(modelPath);
             });
 
+        if (explorer.Errors.Any())
+        {
+            ReportFailures(explorer, rootPath, config);
+            return;
+        }
+
         AnsiConsole.Write(new Rule("[yellow]Smell Analysis Predictions[/]"));
         AnsiConsole.MarkupLine($"[grey]Threshold: >= {config.Analysis.ConfidenceThreshold:F2}[/]");
 
@@ -257,6 +280,43 @@ class Program
         else
         {
             AnsiConsole.MarkupLine("[green]No Architecture smell detected.[/] (Pass --show-all to see all predictions)");
+        }
+        AnsiConsole.Write(new Rule());
+    }
+
+    static void ReportFailures(DirectoryExplorer explorer, string rootPath, ProjectConfig config)
+    {
+        AnsiConsole.Write(new Rule("[red]Analysis Failed[/]"));
+        AnsiConsole.MarkupLine("[red]One or more errors occurred during analysis. Results are incomplete and will not be shown.[/]");
+        
+        var errorTable = new Table().Border(TableBorder.Rounded);
+        errorTable.AddColumn("Error Category");
+        errorTable.AddColumn("Affected Files");
+
+        var groupedErrors = explorer.Errors.GroupBy(e => e.Exception.Message);
+        foreach (var group in groupedErrors)
+        {
+            errorTable.AddRow(
+                $"[red]{group.Key}[/]",
+                $"[grey]{group.Count()} file(s)[/]"
+            );
+        }
+        AnsiConsole.Write(errorTable);
+
+        if (explorer.Errors.Any(e => e.Exception.Message.Contains("Tree-sitter")))
+        {
+            AnsiConsole.Write(new Panel(new Rows(
+                new Markup("[yellow bold]Missing Tree-sitter Native Libraries[/]"),
+                new Markup("\nTo fix this, you need to provide the language-specific shared libraries:"),
+                new Markup("1. Download the required [blue].dll[/] (Windows), [blue].so[/] (Linux), or [blue].dylib[/] (macOS) for the language."),
+                new Markup("2. Place them in the application directory or ensure they are in your [blue]PATH[/]."),
+                new Markup("3. Libraries should be named like [blue]tree-sitter-c-sharp[/], [blue]tree-sitter-java[/], etc.")
+            )).BorderColor(Color.Yellow).Header("[yellow]Action Required[/]"));
+        }
+
+        if (!string.IsNullOrEmpty(config.Logging.LogFilePath))
+        {
+            AnsiConsole.MarkupLine($"[yellow]Check the log file for full details:[/] [blue]{config.Logging.LogFilePath}[/]");
         }
         AnsiConsole.Write(new Rule());
     }
