@@ -94,7 +94,7 @@ public class DirectoryExplorer
         try
         {
             string sourceCode = File.ReadAllText(filePath);
-            var result = _pipeline.Process(sourceCode, filePath);
+            var result = _pipeline.CreateIR(sourceCode, filePath);
 
             _onFileProcessed?.Invoke(filePath, result);
         }

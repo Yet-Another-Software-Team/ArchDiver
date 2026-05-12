@@ -122,6 +122,10 @@ class Program
         });
 
         explorer.Explore(rootPath);
+
+        // Construct the code graph from the exported TOML artifacts and keep it in ContextStorage
+        pipeline.BuildAndStoreGraph(outputRoot);
+
         _logger.LogInformation("Exploration complete. Results saved in {OutputRoot}", outputRoot);
     }
 }

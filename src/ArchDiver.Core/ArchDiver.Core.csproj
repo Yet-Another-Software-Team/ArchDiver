@@ -7,6 +7,11 @@
   </PropertyGroup>
 
   <ItemGroup>
+    <ProjectReference Include="..\ArchDiver.Shared\ArchDiver.Shared.csproj" />
+    <ProjectReference Include="..\ArchDiver.GraphConstruction\ArchDiver.GraphConstruction.csproj" />
+  </ItemGroup>
+
+  <ItemGroup>
     <PackageReference Include="Microsoft.Extensions.FileSystemGlobbing" Version="10.0.7" />
     <PackageReference Include="Microsoft.Extensions.Logging" Version="10.0.7" />
     <PackageReference Include="Tomlyn" Version="2.3.0" />
