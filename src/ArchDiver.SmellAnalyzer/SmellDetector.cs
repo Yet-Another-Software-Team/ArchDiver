@@ -119,7 +119,8 @@ public class SmellDetector : IDisposable
         for (int i = 0; i < maxOutputs; i++)
         {
             var nodeId = classNodes[i].Id;
-            float score = outputTensor.Dimensions.Length > 1 ? outputTensor[i, 0] : outputTensor[i];
+            float logit = outputTensor.Dimensions.Length > 1 ? outputTensor[i, 0] : outputTensor[i];
+            float score = 1.0f / (1.0f + (float)Math.Exp(-logit));
             predictions[nodeId] = score;
         }
 
