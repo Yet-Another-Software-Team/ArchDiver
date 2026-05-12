@@ -37,14 +37,19 @@ public class DirectoryExplorer
     /// <summary>
     /// Recursively explores the directory starting from rootPath.
     /// </summary>
-    public void Explore(string rootPath)
+    public void Explore(string rootPath, Action<int, int>? progressCallback = null)
     {
         var filesToProcess = new List<string>();
         CollectFiles(rootPath, rootPath, 0, filesToProcess);
 
+        int totalFiles = filesToProcess.Count;
+        int processedFiles = 0;
+
         Parallel.ForEach(filesToProcess, file =>
         {
             ProcessFile(rootPath, file);
+            int current = Interlocked.Increment(ref processedFiles);
+            progressCallback?.Invoke(current, totalFiles);
         });
     }
 

@@ -6,6 +6,7 @@ using ArchDiver.Core.Infrastructure;
 using ArchDiver.Core.Models;
 using ArchDiver.Parser.Infrastructure;
 using ArchDiver.Shared.Models;
+using Spectre.Console;
 
 namespace ArchDiver.Cli;
 
@@ -50,7 +51,8 @@ class Program
 
     static void PrintUsage()
     {
-        Console.WriteLine("ArchDiver CLI\nUsage:\n  archdiver <command> [options]\n");
+        AnsiConsole.Write(new FigletText("ArchDiver").Color(Color.Blue));
+        Console.WriteLine("\nUsage:\n  archdiver <command> [options]\n");
         Console.WriteLine("Commands:");
         Console.WriteLine("  explore <path>               Recursively parses supported files.");
         Console.WriteLine("  analyze <path> [model_path]  Runs full pipeline and prints smell predictions. If no model path is specified, uses the built-in model.");
@@ -82,11 +84,16 @@ class Program
 
     static void DisplayConfig(ProjectConfig config)
     {
-        Console.WriteLine($"Configuration ({_configFileName}):");
-        Console.WriteLine($"  Log Level: {config.Logging.MinimumLevel}");
-        Console.WriteLine($"  Max Depth: {config.Analysis.MaxDepth}");
-        Console.WriteLine($"  Confidence Threshold: {config.Analysis.ConfidenceThreshold}");
-        Console.WriteLine($"  Ignore Patterns: {string.Join(", ", config.Analysis.IgnorePatterns)}");
+        var table = new Table();
+        table.AddColumn("Setting");
+        table.AddColumn("Value");
+        table.AddRow("Log Level", config.Logging.MinimumLevel.ToString());
+        table.AddRow("Max Depth", config.Analysis.MaxDepth.ToString());
+        table.AddRow("Confidence Threshold", config.Analysis.ConfidenceThreshold.ToString("F2"));
+        table.AddRow("Ignore Patterns", string.Join(", ", config.Analysis.IgnorePatterns));
+        
+        AnsiConsole.Write(new Rule($"[yellow]Configuration ({_configFileName})[/]"));
+        AnsiConsole.Write(table);
     }
 
     static void HandleExplore(string[] args, ProjectConfig config)
@@ -126,10 +133,15 @@ class Program
             exporter.Export(result, fileOutputDir, fileNameWithoutExtension);
         });
 
-        explorer.Explore(rootPath);
-
-        // Construct the code graph from the exported TOML artifacts and keep it in ContextStorage
-        pipeline.BuildAndStoreGraph(outputRoot);
+        AnsiConsole.Status()
+            .Spinner(Spinner.Known.Dots)
+            .Start("Exploring files...", ctx => {
+                explorer.Explore(rootPath, (current, total) => {
+                    ctx.Status($"Exploring files ([yellow]{current}[/]/[yellow]{total}[/])...");
+                });
+                ctx.Status("Building code graph...");
+                pipeline.BuildAndStoreGraph(outputRoot);
+            });
 
         _logger.LogInformation("Exploration complete. Results saved in {OutputRoot}", outputRoot);
     }
@@ -196,13 +208,30 @@ class Program
             exporter.Export(result, fileOutputDir, fileNameWithoutExtension);
         });
 
-        explorer.Explore(rootPath);
-        var graph = pipeline.BuildAndStoreGraph(outputRoot);
+        Graph graph = null!;
+        IDictionary<int, float> predictions = null!;
 
-        var predictions = pipeline.AnalyzeSmells(modelPath);
+        AnsiConsole.Status()
+            .Spinner(Spinner.Known.Dots)
+            .Start("Analyzing project...", ctx => {
+                explorer.Explore(rootPath, (current, total) => {
+                    ctx.Status($"Exploring files ([yellow]{current}[/]/[yellow]{total}[/])...");
+                });
+                
+                ctx.Status("Building code graph...");
+                graph = pipeline.BuildAndStoreGraph(outputRoot);
 
-        Console.WriteLine("\n--- Smell Analysis Predictions ---");
-        Console.WriteLine($"Threshold: >= {config.Analysis.ConfidenceThreshold:F2}");
+                ctx.Status("Running smell analysis...");
+                predictions = pipeline.AnalyzeSmells(modelPath);
+            });
+
+        AnsiConsole.Write(new Rule("[yellow]Smell Analysis Predictions[/]"));
+        AnsiConsole.MarkupLine($"[grey]Threshold: >= {config.Analysis.ConfidenceThreshold:F2}[/]");
+
+        var resultsTable = new Table();
+        resultsTable.AddColumn("Node");
+        resultsTable.AddColumn("Confidence");
+        resultsTable.AddColumn("Result");
 
         bool anyDetected = false;
         foreach (var kvp in predictions)
@@ -212,20 +241,24 @@ class Program
 
             if (kvp.Value >= config.Analysis.ConfidenceThreshold)
             {
-                Console.WriteLine($"{nodeName}: {kvp.Value:F4} - [Feature Concentration Detected]");
+                resultsTable.AddRow(nodeName, $"[red]{kvp.Value:F4}[/]", "[red bold]Feature Concentration Detected[/]");
                 anyDetected = true;
             }
             else if (showAll)
             {
-                Console.WriteLine($"{nodeName}: {kvp.Value:F4}");
+                resultsTable.AddRow(nodeName, kvp.Value.ToString("F4"), "[grey]Negative[/]");
             }
         }
 
-        if (!anyDetected && !showAll)
+        if (anyDetected || (showAll && predictions.Any()))
         {
-            Console.WriteLine("No Architecture smell detected. (Pass --show-all to see all predictions)");
+            AnsiConsole.Write(resultsTable);
         }
-        Console.WriteLine("----------------------------------");
+        else
+        {
+            AnsiConsole.MarkupLine("[green]No Architecture smell detected.[/] (Pass --show-all to see all predictions)");
+        }
+        AnsiConsole.Write(new Rule());
     }
 
     static string GetHierarchicalName(Graph graph, Node node)

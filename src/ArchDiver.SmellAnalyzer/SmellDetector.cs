@@ -16,7 +16,7 @@ public class SmellDetector : IDisposable
         if (string.IsNullOrWhiteSpace(modelPath))
         {
             var assemblyPath = System.IO.Path.GetDirectoryName(System.Reflection.Assembly.GetExecutingAssembly().Location);
-            modelPath = System.IO.Path.Combine(assemblyPath!, "Models", "code_smell_model.onnx");
+            modelPath = System.IO.Path.Combine(assemblyPath!, "Models", "arch_smell_model.onnx");
         }
 
         _session = new InferenceSession(modelPath);
