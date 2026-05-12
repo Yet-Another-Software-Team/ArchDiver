@@ -17,13 +17,19 @@ public class LcomCalculator(ILanguageProvider provider, ILogger<LcomCalculator> 
     {
         if (totalFields == 0)
         {
-            _logger.LogWarning("LCOM for '{ComponentName}' cannot be calculated: No fields found.", componentName);
+            if (_logger.IsEnabled(LogLevel.Debug))
+            {
+                _logger.LogDebug("LCOM for '{ComponentName}' cannot be calculated: No fields found.", componentName);
+            }
             return 0;
         }
 
         if (methodFieldUsages.Count <= 1)
         {
-            _logger.LogDebug("LCOM for '{ComponentName}' is 0: Single method or no methods found.", componentName);
+            if (_logger.IsEnabled(LogLevel.Debug))
+            {
+                _logger.LogDebug("LCOM for '{ComponentName}' is 0: Single method or no methods found.", componentName);
+            }
             return 0;
         }
 

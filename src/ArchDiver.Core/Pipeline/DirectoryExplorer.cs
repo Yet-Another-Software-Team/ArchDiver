@@ -39,10 +39,16 @@ public class DirectoryExplorer
     /// </summary>
     public void Explore(string rootPath)
     {
-        ExploreInternal(rootPath, rootPath, 0);
+        var filesToProcess = new List<string>();
+        CollectFiles(rootPath, rootPath, 0, filesToProcess);
+
+        Parallel.ForEach(filesToProcess, file =>
+        {
+            ProcessFile(rootPath, file);
+        });
     }
 
-    private void ExploreInternal(string rootPath, string currentPath, int depth)
+    private void CollectFiles(string rootPath, string currentPath, int depth, List<string> filesToProcess)
     {
         if (depth > _maxDepth) return;
 
@@ -51,27 +57,34 @@ public class DirectoryExplorer
         // If it's not the root itself, check if this directory is ignored
         if (relativePath != "." && IsIgnored(relativePath))
         {
-            _logger.LogDebug("Skipping ignored directory: {RelativePath}", relativePath);
+            if (_logger.IsEnabled(LogLevel.Debug))
+            {
+                _logger.LogDebug("Skipping ignored directory: {RelativePath}", relativePath);
+            }
             return;
         }
 
         try
         {
-            foreach (var file in Directory.GetFiles(currentPath))
+            var files = Directory.GetFiles(currentPath);
+            foreach (var file in files)
             {
                 string relativeFilePath = Path.GetRelativePath(rootPath, file);
                 if (IsIgnored(relativeFilePath))
                 {
-                    _logger.LogDebug("Skipping ignored file: {RelativeFilePath}", relativeFilePath);
+                    if (_logger.IsEnabled(LogLevel.Debug))
+                    {
+                        _logger.LogDebug("Skipping ignored file: {RelativeFilePath}", relativeFilePath);
+                    }
                     continue;
                 }
 
-                ProcessFile(rootPath, file);
+                filesToProcess.Add(file);
             }
 
             foreach (var dir in Directory.GetDirectories(currentPath))
             {
-                ExploreInternal(rootPath, dir, depth + 1);
+                CollectFiles(rootPath, dir, depth + 1, filesToProcess);
             }
         }
         catch (Exception ex)
@@ -94,6 +107,11 @@ public class DirectoryExplorer
         try
         {
             string sourceCode = File.ReadAllText(filePath);
+            if (string.IsNullOrWhiteSpace(sourceCode))
+            {
+                // Skip empty files
+                return;
+            }
             var result = _pipeline.CreateIR(sourceCode, filePath);
 
             _onFileProcessed?.Invoke(filePath, result);

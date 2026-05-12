@@ -16,14 +16,14 @@
 
   <ItemGroup>
     <Content
-            Include="..\..\models\code_smell_model.onnx"
-            Link="Models\code_smell_model.onnx"
+            Include="..\..\models\arch_smell_model.onnx"
+            Link="Models\arch_smell_model.onnx"
         >
       <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
     </Content>
     <Content
-            Include="..\..\models\code_smell_model.onnx.data"
-            Link="Models\code_smell_model.onnx.data"
+            Include="..\..\models\arch_smell_model.onnx.data"
+            Link="Models\arch_smell_model.onnx.data"
         >
       <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
     </Content>
