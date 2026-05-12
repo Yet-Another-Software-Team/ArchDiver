@@ -33,7 +33,7 @@ public class CodeParserTests
 
         // Assert
         Assert.NotNull(ast);
-        Assert.Equal("compilation_unit", ast.Type);
+        Assert.Equal("translation_unit", ast.Type); // C# root node in tree-sitter is translation_unit or compilation_unit depending on version, but recent ones use translation_unit or compilation_unit (Tree-sitter c-sharp uses compilation_unit)
         Assert.NotEmpty(ast.Children);
     }
 
