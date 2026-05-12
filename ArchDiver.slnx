@@ -5,6 +5,7 @@
     <Project Path="src/ArchDiver.GraphConstruction/ArchDiver.GraphConstruction.csproj" />
     <Project Path="src/ArchDiver.Parser/ArchDiver.Parser.csproj" />
     <Project Path="src/ArchDiver.Shared/ArchDiver.Shared.csproj" />
+    <Project Path="src/ArchDiver.SmellAnalyzer/ArchDiver.SmellAnalyzer.csproj" />
     <Project Path="src/ArchDiver.Tests/ArchDiver.Tests.csproj" />
   </Folder>
 </Solution>

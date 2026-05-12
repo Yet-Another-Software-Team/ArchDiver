@@ -31,6 +31,7 @@ class Program
         switch (command)
         {
             case "explore": HandleExplore(args, config); break;
+            case "analyze": HandleAnalyze(args, config); break;
             case "config": HandleConfig(args); break;
             default: PrintUsage(); break;
         }
@@ -50,9 +51,10 @@ class Program
     {
         Console.WriteLine("ArchDiver CLI\nUsage:\n  archdiver <command> [options]\n");
         Console.WriteLine("Commands:");
-        Console.WriteLine("  explore <path>   Recursively parses supported files.");
-        Console.WriteLine("  config           Shows current configuration.");
-        Console.WriteLine("  config create    Creates a default configuration file.");
+        Console.WriteLine("  explore <path>               Recursively parses supported files.");
+        Console.WriteLine("  analyze <path> [model_path]  Runs full pipeline and prints smell predictions. If no model path is specified, uses the built-in model.");
+        Console.WriteLine("  config                       Shows current configuration.");
+        Console.WriteLine("  config create                Creates a default configuration file.");
         Console.WriteLine($"\nSupported Languages: {string.Join(", ", _analysisEngine.GetSupportedLanguages())}");
     }
 
@@ -127,5 +129,70 @@ class Program
         pipeline.BuildAndStoreGraph(outputRoot);
 
         _logger.LogInformation("Exploration complete. Results saved in {OutputRoot}", outputRoot);
+    }
+
+    static void HandleAnalyze(string[] args, ProjectConfig config)
+    {
+        if (args.Length < 2)
+        {
+            Console.WriteLine("Missing directory path. Usage: archdiver analyze <path> [model_path]");
+            return;
+        }
+
+        string rootPath = Path.GetFullPath(args[1]);
+        string? modelPath = args.Length > 2 ? Path.GetFullPath(args[2]) : null;
+
+        if (!Directory.Exists(rootPath)) { _logger.LogError("Directory not found: {RootPath}", rootPath); return; }
+        if (modelPath != null && !File.Exists(modelPath)) { _logger.LogError("Model not found: {ModelPath}", modelPath); return; }
+
+        int maxDepth = config.Analysis.MaxDepth;
+        for (int i = 0; i < args.Length; i++)
+        {
+            if (args[i] == "--max-depth" && i + 1 < args.Length && int.TryParse(args[i + 1], out int depth))
+                maxDepth = depth;
+        }
+
+        string outputRoot = Path.Combine(rootPath, _outputDir);
+        if (Directory.Exists(outputRoot)) Directory.Delete(outputRoot, true);
+        Directory.CreateDirectory(outputRoot);
+
+        if (modelPath != null)
+        {
+            _logger.LogInformation("Analyzing: {RootPath} (Max Depth: {MaxDepth}) with model {ModelPath}", rootPath, maxDepth, modelPath);
+        }
+        else
+        {
+            _logger.LogInformation("Analyzing: {RootPath} (Max Depth: {MaxDepth}) with built-in model", rootPath, maxDepth);
+        }
+
+        var pipelineLogger = _loggerFactory.CreateLogger<PipelineControlUnit>();
+        var explorerLogger = _loggerFactory.CreateLogger<DirectoryExplorer>();
+
+        var pipeline = new PipelineControlUnit(_analysisEngine, pipelineLogger);
+        var exporter = new TomlExporter();
+
+        var explorer = new DirectoryExplorer(pipeline, explorerLogger, maxDepth, config.Analysis.IgnorePatterns, (filePath, result) =>
+        {
+            string relativePath = Path.GetRelativePath(rootPath, filePath);
+            string? directoryName = Path.GetDirectoryName(relativePath);
+            string fileNameWithoutExtension = Path.GetFileNameWithoutExtension(relativePath);
+
+            string fileOutputDir = Path.Combine(outputRoot, directoryName ?? "");
+            exporter.Export(result, fileOutputDir, fileNameWithoutExtension);
+        });
+
+        explorer.Explore(rootPath);
+        var graph = pipeline.BuildAndStoreGraph(outputRoot);
+
+        var predictions = pipeline.AnalyzeSmells(modelPath);
+
+        Console.WriteLine("\n--- Smell Analysis Predictions ---");
+        foreach (var kvp in predictions)
+        {
+            var node = graph.Nodes.FirstOrDefault(n => n.Id == kvp.Key);
+            string nodeName = node != null ? node.Name : $"Node {kvp.Key}";
+            Console.WriteLine($"{nodeName}: {kvp.Value:F4}");
+        }
+        Console.WriteLine("----------------------------------");
     }
 }

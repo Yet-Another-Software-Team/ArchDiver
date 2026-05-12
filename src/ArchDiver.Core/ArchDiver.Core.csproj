@@ -9,6 +9,7 @@
   <ItemGroup>
     <ProjectReference Include="..\ArchDiver.Shared\ArchDiver.Shared.csproj" />
     <ProjectReference Include="..\ArchDiver.GraphConstruction\ArchDiver.GraphConstruction.csproj" />
+    <ProjectReference Include="..\ArchDiver.SmellAnalyzer\ArchDiver.SmellAnalyzer.csproj" />
   </ItemGroup>
 
   <ItemGroup>

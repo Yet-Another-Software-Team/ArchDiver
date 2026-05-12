@@ -4,6 +4,7 @@ using ArchDiver.Core.Storage;
 using ArchDiver.Core.Models;
 using ArchDiver.GraphConstruction;
 using ArchDiver.Shared.Models;
+using ArchDiver.SmellAnalyzer;
 
 namespace ArchDiver.Core.Pipeline;
 
@@ -57,5 +58,27 @@ public class PipelineControlUnit(
             graph.Edges.Count);
 
         return graph;
+    }
+
+    /// <summary>
+    /// Analyzes the stored code graph for architectural smells using the specified ONNX model.
+    /// </summary>
+    public Dictionary<int, float> AnalyzeSmells(string? modelPath = null)
+    {
+        var graph = _contextStorage.CodeGraph;
+        if (graph == null)
+            throw new InvalidOperationException("Code graph is not available. Ensure BuildAndStoreGraph has been called.");
+
+        if (modelPath != null)
+        {
+            _logger.LogInformation("Running smell detection using model: {ModelPath}", modelPath);
+        }
+        else
+        {
+            _logger.LogInformation("Running smell detection using built-in model");
+        }
+
+        using var detector = new SmellDetector(modelPath);
+        return detector.AnalyzeGraph(graph);
     }
 }
