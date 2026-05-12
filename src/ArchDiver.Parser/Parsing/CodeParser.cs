@@ -1,3 +1,5 @@
+using System.Runtime.InteropServices;
+using System.IO;
 using TreeSitterParser = TreeSitter.Parser;
 using TreeSitter;
 using ArchDiver.Parser.Abstractions;
@@ -11,20 +13,52 @@ namespace ArchDiver.Parser.Parsing;
 /// </summary>
 public class CodeParser(ILanguageProvider provider)
 {
-    private readonly Language _language = InitializeLanguage(provider);
+    private readonly TreeSitter.Language _language = InitializeLanguage(provider);
 
-    private static Language InitializeLanguage(ILanguageProvider provider)
+    private static TreeSitter.Language InitializeLanguage(ILanguageProvider provider)
     {
         if (provider == null) throw new ArgumentNullException(nameof(provider));
 
         try
         {
-            string libraryName = PlatformHelper.GetPlatformLibraryName(provider.BaseLibraryName);
-            return new Language(libraryName, provider.FunctionName);
+            // Use TreeSitterLanguagePack to download and cache automatically as primary strategy
+            string langId = provider.LanguageId.ToLowerInvariant().Replace("-", "_");
+            if (langId == "csharp") langId = "c_sharp";
+
+            // Trigger download and get the language pointer (returns TSLanguage**)
+            IntPtr langPtrPtr = TslpNative.GetLanguage(langId);
+            
+            if (langPtrPtr != IntPtr.Zero)
+            {
+                // Dereference to get TSLanguage*
+                IntPtr langPtr = Marshal.ReadIntPtr(langPtrPtr);
+                if (langPtr != IntPtr.Zero)
+                {
+                    return new TreeSitter.Language(langPtr);
+                }
+            }
+        }
+        catch
+        {
+            // Fallback: Try to load as a built-in language from TreeSitter.DotNet
+            try 
+            {
+                return new TreeSitter.Language(provider.LanguageId);
+            }
+            catch (Exception ex)
+            {
+                throw new InvalidOperationException($"Failed to load or download Tree-sitter native library for {provider.LanguageId}.", ex);
+            }
+        }
+
+        // Final fallback if both failed
+        try
+        {
+             return new TreeSitter.Language(provider.LanguageId);
         }
         catch (Exception ex)
         {
-            throw new InvalidOperationException($"Failed to load Tree-sitter native library for {provider.LanguageId}.", ex);
+            throw new InvalidOperationException($"Failed to load or download Tree-sitter native library for {provider.LanguageId}. Last TSLP Error: {TslpNative.GetLastError()}", ex);
         }
     }
 

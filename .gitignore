@@ -59,8 +59,12 @@ CodeCoverage/
 TestResult.xml
 nunit-*.xml
 
+# ArchDiver
 .archdiver
 archdiver.toml
 
 # publish file
 publish/*
+
+# log
+*.log
