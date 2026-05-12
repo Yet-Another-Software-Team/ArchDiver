@@ -9,11 +9,11 @@ public partial class LcomCalculator(ILanguageProvider provider, ILogger<LcomCalc
     private readonly ILanguageProvider _provider = provider;
     private readonly ILogger<LcomCalculator> _logger = logger;
 
-    [LoggerMessage(Level = LogLevel.Debug, Message = "LCOM for '{ComponentName}' cannot be calculated: No fields found.")]
-    static partial void LogNoFieldsFound(ILogger logger, string componentName);
+    private static void LogNoFieldsFound(ILogger logger, string componentName)
+        => logger.LogDebug("LCOM for '{ComponentName}' cannot be calculated: No fields found.", componentName);
 
-    [LoggerMessage(Level = LogLevel.Debug, Message = "LCOM for '{ComponentName}' is 0: Single method or no methods found.")]
-    static partial void LogSingleMethodOrNoMethods(ILogger logger, string componentName);
+    private static void LogSingleMethodOrNoMethods(ILogger logger, string componentName)
+        => logger.LogDebug("LCOM for '{ComponentName}' is 0: Single method or no methods found.", componentName);
 
     /// <summary>
     /// Calculates the Lack of Cohesion in Methods (LCOM) for a component.

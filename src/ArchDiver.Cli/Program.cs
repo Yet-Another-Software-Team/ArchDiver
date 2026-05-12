@@ -27,32 +27,32 @@ partial class Program
     public static IConfigManager ConfigManager => _configManager;
 
 
-    [LoggerMessage(Level = LogLevel.Information, Message = "Created default configuration: {ConfigFileName}")]
-    static partial void LogConfigCreated(Microsoft.Extensions.Logging.ILogger logger, string configFileName);
+    private static void LogConfigCreated(Microsoft.Extensions.Logging.ILogger logger, string configFileName)
+        => logger.LogInformation("Created default configuration: {ConfigFileName}", configFileName);
 
-    [LoggerMessage(Level = LogLevel.Warning, Message = "No config file found. Using defaults.")]
-    static partial void LogNoConfigFound(Microsoft.Extensions.Logging.ILogger logger);
+    private static void LogNoConfigFound(Microsoft.Extensions.Logging.ILogger logger)
+        => logger.LogWarning("No config file found. Using defaults.");
 
-    [LoggerMessage(Level = LogLevel.Error, Message = "Missing directory path.")]
-    static partial void LogMissingDirectory(Microsoft.Extensions.Logging.ILogger logger);
+    private static void LogMissingDirectory(Microsoft.Extensions.Logging.ILogger logger)
+        => logger.LogError("Missing directory path.");
 
-    [LoggerMessage(Level = LogLevel.Error, Message = "Directory not found: {RootPath}")]
-    static partial void LogDirectoryNotFound(Microsoft.Extensions.Logging.ILogger logger, string rootPath);
+    private static void LogDirectoryNotFound(Microsoft.Extensions.Logging.ILogger logger, string rootPath)
+        => logger.LogError("Directory not found: {RootPath}", rootPath);
 
-    [LoggerMessage(Level = LogLevel.Error, Message = "Model not found: {ModelPath}")]
-    static partial void LogModelNotFound(Microsoft.Extensions.Logging.ILogger logger, string modelPath);
+    private static void LogModelNotFound(Microsoft.Extensions.Logging.ILogger logger, string modelPath)
+        => logger.LogError("Model not found: {ModelPath}", modelPath);
 
-    [LoggerMessage(Level = LogLevel.Information, Message = "Exploring: {RootPath} (Max Depth: {MaxDepth})")]
-    static partial void LogExploring(Microsoft.Extensions.Logging.ILogger logger, string rootPath, int maxDepth);
+    private static void LogExploring(Microsoft.Extensions.Logging.ILogger logger, string rootPath, int maxDepth)
+        => logger.LogInformation("Exploring: {RootPath} (Max Depth: {MaxDepth})", rootPath, maxDepth);
 
-    [LoggerMessage(Level = LogLevel.Information, Message = "Exploration complete. Results saved in {OutputRoot}")]
-    static partial void LogExplorationComplete(Microsoft.Extensions.Logging.ILogger logger, string outputRoot);
+    private static void LogExplorationComplete(Microsoft.Extensions.Logging.ILogger logger, string outputRoot)
+        => logger.LogInformation("Exploration complete. Results saved in {OutputRoot}", outputRoot);
 
-    [LoggerMessage(Level = LogLevel.Information, Message = "Analyzing: {RootPath} (Max Depth: {MaxDepth}) with model {ModelPath}")]
-    static partial void LogAnalyzingWithModel(Microsoft.Extensions.Logging.ILogger logger, string rootPath, int maxDepth, string modelPath);
+    private static void LogAnalyzingWithModel(Microsoft.Extensions.Logging.ILogger logger, string rootPath, int maxDepth, string modelPath)
+        => logger.LogInformation("Analyzing: {RootPath} (Max Depth: {MaxDepth}) with model {ModelPath}", rootPath, maxDepth, modelPath);
 
-    [LoggerMessage(Level = LogLevel.Information, Message = "Analyzing: {RootPath} (Max Depth: {MaxDepth}) with built-in model")]
-    static partial void LogAnalyzingWithBuiltInModel(Microsoft.Extensions.Logging.ILogger logger, string rootPath, int maxDepth);
+    private static void LogAnalyzingWithBuiltInModel(Microsoft.Extensions.Logging.ILogger logger, string rootPath, int maxDepth)
+        => logger.LogInformation("Analyzing: {RootPath} (Max Depth: {MaxDepth}) with built-in model", rootPath, maxDepth);
 
     static void Main(string[] args)
     {
