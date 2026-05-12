@@ -26,5 +26,6 @@ public class ProjectConfig
             "**/*.pdb"
         ];
         public int MaxDepth { get; set; } = 10;
+        public double ConfidenceThreshold { get; set; } = 0.75;
     }
 }

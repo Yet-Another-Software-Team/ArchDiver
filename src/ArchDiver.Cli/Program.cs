@@ -83,6 +83,7 @@ class Program
         Console.WriteLine($"Configuration ({_configFileName}):");
         Console.WriteLine($"  Log Level: {config.Logging.MinimumLevel}");
         Console.WriteLine($"  Max Depth: {config.Analysis.MaxDepth}");
+        Console.WriteLine($"  Confidence Threshold: {config.Analysis.ConfidenceThreshold}");
         Console.WriteLine($"  Ignore Patterns: {string.Join(", ", config.Analysis.IgnorePatterns)}");
     }
 
@@ -187,11 +188,20 @@ class Program
         var predictions = pipeline.AnalyzeSmells(modelPath);
 
         Console.WriteLine("\n--- Smell Analysis Predictions ---");
+        Console.WriteLine($"Threshold: >= {config.Analysis.ConfidenceThreshold:F2}");
         foreach (var kvp in predictions)
         {
             var node = graph.Nodes.FirstOrDefault(n => n.Id == kvp.Key);
             string nodeName = node != null ? node.Name : $"Node {kvp.Key}";
-            Console.WriteLine($"{nodeName}: {kvp.Value:F4}");
+
+            if (kvp.Value >= config.Analysis.ConfidenceThreshold)
+            {
+                Console.WriteLine($"{nodeName}: {kvp.Value:F4} - [Feature Concentration Detected]");
+            }
+            else
+            {
+                Console.WriteLine($"{nodeName}: {kvp.Value:F4}");
+            }
         }
         Console.WriteLine("----------------------------------");
     }
