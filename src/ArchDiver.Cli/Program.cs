@@ -5,6 +5,7 @@ using ArchDiver.Core.Abstractions;
 using ArchDiver.Core.Infrastructure;
 using ArchDiver.Core.Models;
 using ArchDiver.Parser.Infrastructure;
+using ArchDiver.Shared.Models;
 
 namespace ArchDiver.Cli;
 
@@ -192,7 +193,7 @@ class Program
         foreach (var kvp in predictions)
         {
             var node = graph.Nodes.FirstOrDefault(n => n.Id == kvp.Key);
-            string nodeName = node != null ? node.Name : $"Node {kvp.Key}";
+            string nodeName = node != null ? GetHierarchicalName(graph, node) : $"Node {kvp.Key}";
 
             if (kvp.Value >= config.Analysis.ConfidenceThreshold)
             {
@@ -204,5 +205,33 @@ class Program
             }
         }
         Console.WriteLine("----------------------------------");
+    }
+
+    static string GetHierarchicalName(Graph graph, Node node)
+    {
+        var path = new List<string> { node.Name };
+        int currentId = node.Id;
+
+        while (true)
+        {
+            var edge = graph.Edges.FirstOrDefault(e => e.TargetId == currentId &&
+                (e.Type == EdgeType.ComponentContainsClass || e.Type == EdgeType.ComponentContainsComponent));
+
+            if (edge == null) break;
+
+            var parent = graph.Nodes.FirstOrDefault(n => n.Id == edge.SourceId);
+            if (parent == null) break;
+
+            string parentName = parent.Name;
+            if (parentName == "out")
+            {
+                break; // Root reached, skip adding it to the path
+            }
+
+            path.Insert(0, parentName);
+            currentId = parent.Id;
+        }
+
+        return string.Join(".", path);
     }
 }

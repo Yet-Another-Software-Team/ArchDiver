@@ -13,6 +13,7 @@ public class GraphBuilder
     public Graph BuildCodeGraph(string rootDirectory)
     {
         var graph = new Graph();
+        int nextNodeId = 0;
         var classNameToId = new Dictionary<string, int>();
         var componentPathToId = new Dictionary<string, int>();
         var classDependencies = new Dictionary<string, HashSet<string>>();
@@ -23,7 +24,7 @@ public class GraphBuilder
 
             if (!componentPathToId.TryGetValue(absDir, out int currCompId))
             {
-                currCompId = componentPathToId.Count;
+                currCompId = nextNodeId++;
                 componentPathToId[absDir] = currCompId;
             }
 
@@ -46,7 +47,7 @@ public class GraphBuilder
                 var subDir = Path.GetFullPath(dirname);
                 if (!componentPathToId.TryGetValue(subDir, out int subCompId))
                 {
-                    subCompId = componentPathToId.Count;
+                    subCompId = nextNodeId++;
 
                     componentPathToId[subDir] = subCompId;
                 }
@@ -72,7 +73,7 @@ public class GraphBuilder
 
                 if (!classNameToId.TryGetValue(className, out int currClassId))
                 {
-                    currClassId = classNameToId.Count;
+                    currClassId = nextNodeId++;
                     classNameToId[className] = currClassId;
                 }
 
