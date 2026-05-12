@@ -8,6 +8,10 @@ using ArchDiver.Parser.Infrastructure;
 using ArchDiver.Shared.Models;
 using Spectre.Console;
 using Serilog;
+using System.IO;
+using System;
+using System.Collections.Generic;
+using System.Linq;
 
 namespace ArchDiver.Cli;
 
@@ -19,6 +23,9 @@ partial class Program
     private static ILogger<Program> _logger = null!;
     private static ICodeAnalysisEngine _analysisEngine = null!;
     private static readonly IConfigManager _configManager = new TomlConfigManager();
+
+    public static IConfigManager ConfigManager => _configManager;
+
 
     [LoggerMessage(Level = LogLevel.Information, Message = "Created default configuration: {ConfigFileName}")]
     static partial void LogConfigCreated(Microsoft.Extensions.Logging.ILogger logger, string configFileName);
@@ -50,8 +57,8 @@ partial class Program
     static void Main(string[] args)
     {
         ProjectConfig config = File.Exists(_configFileName)
-            ? _configManager.Load(_configFileName)
-            : _configManager.GetDefault();
+            ? ConfigManager.Load(_configFileName)
+            : ConfigManager.GetDefault();
 
         ConfigureLogging(config);
         _analysisEngine = Bootstrapper.Initialize(_loggerFactory);
@@ -103,7 +110,7 @@ partial class Program
     {
         if (args.Length > 1 && args[1].ToLower() == "create")
         {
-            _configManager.Save(_configManager.GetDefault(), _configFileName);
+            ConfigManager.Save(ConfigManager.GetDefault(), _configFileName);
             LogConfigCreated(_logger, _configFileName);
             return;
         }
@@ -111,11 +118,11 @@ partial class Program
         if (!File.Exists(_configFileName))
         {
             LogNoConfigFound(_logger);
-            DisplayConfig(_configManager.GetDefault());
+            DisplayConfig(ConfigManager.GetDefault());
         }
         else
         {
-            DisplayConfig(_configManager.Load(_configFileName));
+            DisplayConfig(ConfigManager.Load(_configFileName));
         }
     }
 

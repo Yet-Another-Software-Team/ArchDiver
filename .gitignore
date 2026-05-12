@@ -68,3 +68,6 @@ publish/*
 
 # log
 *.log
+
+# Visual Studio
+.vs/*

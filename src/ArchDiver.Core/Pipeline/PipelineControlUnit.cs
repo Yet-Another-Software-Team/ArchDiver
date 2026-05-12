@@ -5,6 +5,8 @@ using ArchDiver.Core.Models;
 using ArchDiver.GraphConstruction;
 using ArchDiver.Shared.Models;
 using ArchDiver.SmellAnalyzer;
+using System;
+using System.Collections.Generic;
 
 namespace ArchDiver.Core.Pipeline;
 

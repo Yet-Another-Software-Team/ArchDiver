@@ -5,6 +5,8 @@ using TreeSitter;
 using ArchDiver.Parser.Abstractions;
 using ArchDiver.Core.Models;
 using ArchDiver.Parser.Infrastructure;
+using System;
+using System.Linq;
 
 namespace ArchDiver.Parser.Parsing;
 
@@ -27,7 +29,7 @@ public class CodeParser(ILanguageProvider provider)
 
             // Trigger download and get the language pointer (returns TSLanguage**)
             IntPtr langPtrPtr = TslpNative.GetLanguage(langId);
-            
+
             if (langPtrPtr != IntPtr.Zero)
             {
                 // Dereference to get TSLanguage*
@@ -41,7 +43,7 @@ public class CodeParser(ILanguageProvider provider)
         catch
         {
             // Fallback: Try to load as a built-in language from TreeSitter.DotNet
-            try 
+            try
             {
                 return new TreeSitter.Language(provider.LanguageId);
             }
@@ -54,7 +56,7 @@ public class CodeParser(ILanguageProvider provider)
         // Final fallback if both failed
         try
         {
-             return new TreeSitter.Language(provider.LanguageId);
+            return new TreeSitter.Language(provider.LanguageId);
         }
         catch (Exception ex)
         {
@@ -85,7 +87,7 @@ public class CodeParser(ILanguageProvider provider)
         return MapToAstNode(tree.RootNode, sourceCode);
     }
 
-    private AstNode MapToAstNode(Node tsNode, string sourceCode)
+    private static AstNode MapToAstNode(Node tsNode, string sourceCode)
     {
         var node = new AstNode
         {
@@ -97,7 +99,7 @@ public class CodeParser(ILanguageProvider provider)
             )
         };
 
-        for (int i = 0; i < tsNode.Children.Count(); i++)
+        for (int i = 0; i < tsNode.Children.Count; i++)
         {
             var tsChild = tsNode.Children.ElementAt(i);
             if (tsChild != null)
