@@ -24,26 +24,26 @@ public partial class PipelineControlUnit(
     private readonly ICodeAnalysisEngine _analysisEngine = analysisEngine ?? throw new ArgumentNullException(nameof(analysisEngine));
     private readonly GraphBuilder _graphBuilder = graphBuilder ?? new GraphBuilder();
 
-    [LoggerMessage(Level = LogLevel.Debug, Message = "Analyzing {FilePath}...")]
-    static partial void LogAnalyzingFile(ILogger logger, string filePath);
+    private static void LogAnalyzingFile(ILogger logger, string filePath)
+        => logger.LogDebug("Analyzing {FilePath}...", filePath);
 
-    [LoggerMessage(Level = LogLevel.Debug, Message = "Constructing code graph from {RootDirectory}...")]
-    static partial void LogConstructingGraph(ILogger logger, string rootDirectory);
+    private static void LogConstructingGraph(ILogger logger, string rootDirectory)
+        => logger.LogDebug("Constructing code graph from {RootDirectory}...", rootDirectory);
 
-    [LoggerMessage(Level = LogLevel.Debug, Message = "Code graph stored in ContextStorage (Nodes: {NodeCount}, Edges: {EdgeCount}).")]
-    static partial void LogGraphStored(ILogger logger, int nodeCount, int edgeCount);
+    private static void LogGraphStored(ILogger logger, int nodeCount, int edgeCount)
+        => logger.LogDebug("Code graph stored in ContextStorage (Nodes: {NodeCount}, Edges: {EdgeCount}).", nodeCount, edgeCount);
 
-    [LoggerMessage(Level = LogLevel.Debug, Message = "Running smell detection using model: {ModelPath}")]
-    static partial void LogRunningSmellDetectionWithModel(ILogger logger, string modelPath);
+    private static void LogRunningSmellDetectionWithModel(ILogger logger, string modelPath)
+        => logger.LogDebug("Running smell detection using model: {ModelPath}", modelPath);
 
-    [LoggerMessage(Level = LogLevel.Debug, Message = "Running smell detection using built-in model")]
-    static partial void LogRunningSmellDetectionBuiltIn(ILogger logger);
+    private static void LogRunningSmellDetectionBuiltIn(ILogger logger)
+        => logger.LogDebug("Running smell detection using built-in model");
 
-    [LoggerMessage(Level = LogLevel.Debug, Message = "Raw prediction results:")]
-    static partial void LogRawPredictionsHeader(ILogger logger);
+    private static void LogRawPredictionsHeader(ILogger logger)
+        => logger.LogDebug("Raw prediction results:");
 
-    [LoggerMessage(Level = LogLevel.Debug, Message = "  Node {NodeId}: {Score}")]
-    static partial void LogNodePrediction(ILogger logger, int nodeId, float score);
+    private static void LogNodePrediction(ILogger logger, int nodeId, float score)
+        => logger.LogDebug("  Node {NodeId}: {Score}", nodeId, score);
 
     public ContextStorage ContextStorage => _contextStorage;
 

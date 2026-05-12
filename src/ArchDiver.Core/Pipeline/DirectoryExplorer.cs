@@ -22,17 +22,17 @@ public partial class DirectoryExplorer
     private readonly Action<string, FileAnalysisResult>? _onFileProcessed;
     private readonly ConcurrentBag<(string FilePath, Exception Exception)> _errors = new();
 
-    [LoggerMessage(Level = LogLevel.Debug, Message = "Skipping ignored directory: {RelativePath}")]
-    static partial void LogSkippingIgnoredDirectory(ILogger logger, string relativePath);
+    private static void LogSkippingIgnoredDirectory(ILogger logger, string relativePath)
+        => logger.LogDebug("Skipping ignored directory: {RelativePath}", relativePath);
 
-    [LoggerMessage(Level = LogLevel.Debug, Message = "Skipping ignored file: {RelativeFilePath}")]
-    static partial void LogSkippingIgnoredFile(ILogger logger, string relativeFilePath);
+    private static void LogSkippingIgnoredFile(ILogger logger, string relativeFilePath)
+        => logger.LogDebug("Skipping ignored file: {RelativeFilePath}", relativeFilePath);
 
-    [LoggerMessage(Level = LogLevel.Warning, Message = "Failed to access {CurrentPath}")]
-    static partial void LogAccessFailed(ILogger logger, Exception ex, string currentPath);
+    private static void LogAccessFailed(ILogger logger, Exception ex, string currentPath)
+        => logger.LogWarning(ex, "Failed to access {CurrentPath}", currentPath);
 
-    [LoggerMessage(Level = LogLevel.Error, Message = "Error processing {FilePath}")]
-    static partial void LogProcessingError(ILogger logger, Exception ex, string filePath);
+    private static void LogProcessingError(ILogger logger, Exception ex, string filePath)
+        => logger.LogError(ex, "Error processing {FilePath}", filePath);
 
     public IEnumerable<(string FilePath, Exception Exception)> Errors => _errors;
 
