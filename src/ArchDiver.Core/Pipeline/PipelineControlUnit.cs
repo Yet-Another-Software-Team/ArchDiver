@@ -32,9 +32,9 @@ public class PipelineControlUnit(
         if (string.IsNullOrWhiteSpace(sourceCode))
             throw new ArgumentException("Source code cannot be null or whitespace.", nameof(sourceCode));
 
-        if (_logger.IsEnabled(LogLevel.Information))
+        if (_logger.IsEnabled(LogLevel.Debug))
         {
-            _logger.LogInformation("Analyzing {FilePath}...", filePath);
+            _logger.LogDebug("Analyzing {FilePath}...", filePath);
         }
 
         var result = _analysisEngine.Analyze(sourceCode, filePath);
@@ -50,17 +50,17 @@ public class PipelineControlUnit(
         if (string.IsNullOrWhiteSpace(analysisArtifactsRootDirectory))
             throw new ArgumentException("Directory cannot be null or whitespace.", nameof(analysisArtifactsRootDirectory));
 
-        if (_logger.IsEnabled(LogLevel.Information))
+        if (_logger.IsEnabled(LogLevel.Debug))
         {
-            _logger.LogInformation("Constructing code graph from {RootDirectory}...", analysisArtifactsRootDirectory);
+            _logger.LogDebug("Constructing code graph from {RootDirectory}...", analysisArtifactsRootDirectory);
         }
 
         var graph = _graphBuilder.BuildCodeGraph(analysisArtifactsRootDirectory);
         _contextStorage.StoreGraph(graph);
 
-        if (_logger.IsEnabled(LogLevel.Information))
+        if (_logger.IsEnabled(LogLevel.Debug))
         {
-            _logger.LogInformation(
+            _logger.LogDebug(
                 "Code graph stored in ContextStorage (Nodes: {NodeCount}, Edges: {EdgeCount}).",
                 graph.Nodes.Count,
                 graph.Edges.Count);
@@ -80,16 +80,16 @@ public class PipelineControlUnit(
 
         if (modelPath != null)
         {
-            if (_logger.IsEnabled(LogLevel.Information))
+            if (_logger.IsEnabled(LogLevel.Debug))
             {
-                _logger.LogInformation("Running smell detection using model: {ModelPath}", modelPath);
+                _logger.LogDebug("Running smell detection using model: {ModelPath}", modelPath);
             }
         }
         else
         {
-            if (_logger.IsEnabled(LogLevel.Information))
+            if (_logger.IsEnabled(LogLevel.Debug))
             {
-                _logger.LogInformation("Running smell detection using built-in model");
+                _logger.LogDebug("Running smell detection using built-in model");
             }
         }
 

@@ -1,6 +1,8 @@
 using System;
 using System.Collections.Generic;
+using System.IO;
 using System.Linq;
+using System.Reflection;
 using Microsoft.ML.OnnxRuntime;
 using Microsoft.ML.OnnxRuntime.Tensors;
 using ArchDiver.Shared.Models;
@@ -10,16 +12,41 @@ namespace ArchDiver.SmellAnalyzer;
 public class SmellDetector : IDisposable
 {
     private readonly InferenceSession _session;
+    private readonly string? _tempModelDir;
 
     public SmellDetector(string? modelPath = null)
     {
         if (string.IsNullOrWhiteSpace(modelPath))
         {
-            var assemblyPath = System.IO.Path.GetDirectoryName(System.Reflection.Assembly.GetExecutingAssembly().Location);
-            modelPath = System.IO.Path.Combine(assemblyPath!, "Models", "arch_smell_model.onnx");
+            _tempModelDir = Path.Combine(Path.GetTempPath(), "ArchDiver", Guid.NewGuid().ToString());
+            Directory.CreateDirectory(_tempModelDir);
+
+            string onnxPath = Path.Combine(_tempModelDir, "arch_smell_model.onnx");
+            string dataPath = Path.Combine(_tempModelDir, "arch_smell_model.onnx.data");
+
+            ExtractResource("Models.arch_smell_model.onnx", onnxPath);
+            ExtractResource("Models.arch_smell_model.onnx.data", dataPath);
+
+            modelPath = onnxPath;
         }
 
         _session = new InferenceSession(modelPath);
+    }
+
+    private void ExtractResource(string resourceNameSuffix, string outputPath)
+    {
+        var assembly = Assembly.GetExecutingAssembly();
+        string? resourceName = assembly.GetManifestResourceNames().FirstOrDefault(n => n.EndsWith(resourceNameSuffix));
+        
+        if (resourceName == null)
+            throw new InvalidOperationException($"Resource ending with '{resourceNameSuffix}' not found. Available resources: {string.Join(", ", assembly.GetManifestResourceNames())}");
+
+        using Stream? stream = assembly.GetManifestResourceStream(resourceName);
+        if (stream == null)
+            throw new InvalidOperationException($"Failed to load resource '{resourceName}'.");
+
+        using var fileStream = File.Create(outputPath);
+        stream.CopyTo(fileStream);
     }
 
     /// <summary>
@@ -130,5 +157,9 @@ public class SmellDetector : IDisposable
     public void Dispose()
     {
         _session?.Dispose();
+        if (_tempModelDir != null && Directory.Exists(_tempModelDir))
+        {
+            try { Directory.Delete(_tempModelDir, true); } catch { /* Ignore */ }
+        }
     }
 }

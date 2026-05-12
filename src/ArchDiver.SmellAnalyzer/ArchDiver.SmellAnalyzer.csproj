@@ -15,18 +15,14 @@
   </ItemGroup>
 
   <ItemGroup>
-    <Content
+    <EmbeddedResource
             Include="..\..\models\arch_smell_model.onnx"
             Link="Models\arch_smell_model.onnx"
-        >
-      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
-    </Content>
-    <Content
+        />
+    <EmbeddedResource
             Include="..\..\models\arch_smell_model.onnx.data"
             Link="Models\arch_smell_model.onnx.data"
-        >
-      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
-    </Content>
+        />
   </ItemGroup>
 
 </Project>

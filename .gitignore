@@ -61,3 +61,6 @@ nunit-*.xml
 
 .archdiver
 archdiver.toml
+
+# publish file
+publish/*
