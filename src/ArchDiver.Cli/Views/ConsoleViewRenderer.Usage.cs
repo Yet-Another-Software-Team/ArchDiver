@@ -15,6 +15,7 @@ public partial class ConsoleViewRenderer
         Console.WriteLine("                               Options:");
         Console.WriteLine("                                 --show-all    Display all predictions, not just those exceeding the threshold.");
         Console.WriteLine("                                 --ci          Summarize findings and exit with non-zero code if smells detected.");
+        Console.WriteLine("                                 --from-toml   Run analysis from pre-parsed TOML artifacts instead of source code.");
         Console.WriteLine("                                 --max-depth   Override maximum directory search depth.");
         Console.WriteLine("  config                       Shows current configuration.");
         Console.WriteLine("  config create                Creates a default configuration file.");

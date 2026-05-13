@@ -13,7 +13,7 @@ public partial class CommandController
     {
         if (args.Length < 2)
         {
-            Console.WriteLine("Missing directory path. Usage: archdiver analyze <path> [model_path] [--show-all] [--ci]");
+            Console.WriteLine("Missing directory path. Usage: archdiver analyze <path> [model_path] [--show-all] [--ci] [--from-toml]");
             return 1;
         }
 
@@ -21,6 +21,7 @@ public partial class CommandController
         string? modelPath = null;
         bool showAll = false;
         bool ciMode = false;
+        bool fromToml = false;
         int maxDepth = config.Analysis.MaxDepth;
 
         for (int i = 2; i < args.Length; i++)
@@ -32,6 +33,10 @@ public partial class CommandController
             else if (args[i] == "--ci")
             {
                 ciMode = true;
+            }
+            else if (args[i] == "--from-toml")
+            {
+                fromToml = true;
             }
             else if (args[i] == "--max-depth" && i + 1 < args.Length && int.TryParse(args[i + 1], out int depth))
             {
@@ -56,9 +61,13 @@ public partial class CommandController
             return 1;
         }
 
-        string outputRoot = Path.Combine(rootPath, _outputDir);
-        if (Directory.Exists(outputRoot)) Directory.Delete(outputRoot, true);
-        Directory.CreateDirectory(outputRoot);
+        string outputRoot = fromToml ? rootPath : Path.Combine(rootPath, _outputDir);
+
+        if (!fromToml)
+        {
+            if (Directory.Exists(outputRoot)) Directory.Delete(outputRoot, true);
+            Directory.CreateDirectory(outputRoot);
+        }
 
         if (modelPath != null)
         {
@@ -70,20 +79,7 @@ public partial class CommandController
         }
 
         var pipelineLogger = _loggerFactory.CreateLogger<PipelineControlUnit>();
-        var explorerLogger = _loggerFactory.CreateLogger<DirectoryExplorer>();
-
         var pipeline = new PipelineControlUnit(_analysisEngine, pipelineLogger);
-        var exporter = new TomlExporter();
-
-        var explorer = new DirectoryExplorer(pipeline, explorerLogger, maxDepth, config.Analysis.IgnorePatterns, (filePath, result) =>
-        {
-            string relativePath = Path.GetRelativePath(rootPath, filePath);
-            string? directoryName = Path.GetDirectoryName(relativePath);
-            string fileNameWithoutExtension = Path.GetFileNameWithoutExtension(relativePath);
-
-            string fileOutputDir = Path.Combine(outputRoot, directoryName ?? "");
-            exporter.Export(result, fileOutputDir, fileNameWithoutExtension);
-        });
 
         Graph graph = null!;
         IDictionary<int, float> predictions = null!;
@@ -91,11 +87,33 @@ public partial class CommandController
 
         AnsiConsole.Status()
             .Spinner(Spinner.Known.Dots)
-            .Start("Analyzing project...", ctx => {
-                explorer.Explore(rootPath, (current, total) => {
-                    ctx.Status($"Exploring files ([yellow]{current}[/]/[yellow]{total}[/])...");
-                    scannedFiles = total;
-                });
+            .Start("Analyzing project...", ctx =>
+            {
+                if (!fromToml)
+                {
+                    var explorerLogger = _loggerFactory.CreateLogger<DirectoryExplorer>();
+                    var exporter = new TomlExporter();
+
+                    var explorer = new DirectoryExplorer(pipeline, explorerLogger, maxDepth, config.Analysis.IgnorePatterns, (filePath, result) =>
+                    {
+                        string relativePath = Path.GetRelativePath(rootPath, filePath);
+                        string? directoryName = Path.GetDirectoryName(relativePath);
+                        string fileNameWithoutExtension = Path.GetFileNameWithoutExtension(relativePath);
+
+                        string fileOutputDir = Path.Combine(outputRoot, directoryName ?? "");
+                        exporter.Export(result, fileOutputDir, fileNameWithoutExtension);
+                    });
+
+                    explorer.Explore(rootPath, (current, total) =>
+                    {
+                        ctx.Status($"Exploring files ([yellow]{current}[/]/[yellow]{total}[/])...");
+                        scannedFiles = total;
+                    });
+                }
+                else
+                {
+                    scannedFiles = Directory.GetFiles(outputRoot, "*.toml", SearchOption.AllDirectories).Length;
+                }
 
                 ctx.Status("Building code graph...");
                 graph = pipeline.BuildAndStoreGraph(outputRoot);
@@ -104,9 +122,8 @@ public partial class CommandController
                 predictions = pipeline.AnalyzeSmells(modelPath);
             });
 
-        if (explorer.Errors.Any())
+        if (graph == null)
         {
-            _view.ShowAnalysisFailed(explorer, config);
             return 1;
         }
 
