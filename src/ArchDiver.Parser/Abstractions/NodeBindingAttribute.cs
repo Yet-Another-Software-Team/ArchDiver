@@ -1,3 +1,5 @@
+using System;
+
 namespace ArchDiver.Parser.Abstractions;
 
 /// <summary>

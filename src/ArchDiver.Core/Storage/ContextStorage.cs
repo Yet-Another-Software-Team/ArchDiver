@@ -1,28 +1,23 @@
 using ArchDiver.Core.Models;
+using ArchDiver.Shared.Models;
+using System;
 
 namespace ArchDiver.Core.Storage;
 
 /// <summary>
-/// Serves as the centralized storage for maintaining state, parsed data,
-/// and analysis results across the various components of the pipeline.
+/// Stores state, parsed data, and analysis results across the pipeline.
 /// </summary>
 public class ContextStorage
 {
-    // For now, it simply stores a collection of parsed AST nodes.
-    public List<AstNode> ParsedAsts { get; private set; }
-
-    public ContextStorage()
-    {
-        ParsedAsts = new List<AstNode>();
-    }
+    // Graph constructed from analysis artifacts (e.g., exported TOML).
+    public Graph? CodeGraph { get; private set; }
 
     /// <summary>
-    /// Stores an Abstract Syntax Tree node into the context.
+    /// Stores a constructed code graph into the context.
     /// </summary>
-    public void StoreAst(AstNode ast)
+    public void StoreGraph(Graph graph)
     {
-        if (ast == null) throw new ArgumentNullException(nameof(ast));
-        ParsedAsts.Add(ast);
+        CodeGraph = graph ?? throw new ArgumentNullException(nameof(graph));
     }
 
     /// <summary>
@@ -30,6 +25,6 @@ public class ContextStorage
     /// </summary>
     public void Clear()
     {
-        ParsedAsts.Clear();
+        CodeGraph = null;
     }
 }

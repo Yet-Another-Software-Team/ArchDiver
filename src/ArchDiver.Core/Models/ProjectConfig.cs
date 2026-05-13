@@ -10,6 +10,7 @@ public class ProjectConfig
     public class LoggingConfig
     {
         public LogLevel MinimumLevel { get; set; } = LogLevel.Information;
+        public string? LogFilePath { get; set; } = "archdiver.log";
     }
 
     public class AnalysisConfig
@@ -26,5 +27,6 @@ public class ProjectConfig
             "**/*.pdb"
         ];
         public int MaxDepth { get; set; } = 10;
+        public double ConfidenceThreshold { get; set; } = 0.75;
     }
 }

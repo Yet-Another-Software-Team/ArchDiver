@@ -1,20 +1,23 @@
+using System;
+using System.Collections.Generic;
+using System.Linq;
 using ArchDiver.Parser.Abstractions;
 
 namespace ArchDiver.Parser.Infrastructure;
 
 /// <summary>
-/// Central registry for language providers (The Kernel).
+/// Registry for language providers.
 /// </summary>
 public class LanguageRegistry : ILanguageRegistry
 {
-    private readonly List<ILanguageProvider> _providers = new();
+    private readonly List<ILanguageProvider> _providers = [];
 
     /// <summary>
     /// Registers a new language provider.
     /// </summary>
     public void Register(ILanguageProvider provider)
     {
-        if (provider == null) throw new ArgumentNullException(nameof(provider));
+        ArgumentNullException.ThrowIfNull(provider);
 
         if (!_providers.Any(p => p.LanguageId == provider.LanguageId))
         {

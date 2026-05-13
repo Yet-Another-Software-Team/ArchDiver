@@ -1,8 +1,12 @@
+using System.Runtime.InteropServices;
+using System.IO;
 using TreeSitterParser = TreeSitter.Parser;
 using TreeSitter;
 using ArchDiver.Parser.Abstractions;
 using ArchDiver.Core.Models;
 using ArchDiver.Parser.Infrastructure;
+using System;
+using System.Linq;
 
 namespace ArchDiver.Parser.Parsing;
 
@@ -11,20 +15,46 @@ namespace ArchDiver.Parser.Parsing;
 /// </summary>
 public class CodeParser(ILanguageProvider provider)
 {
-    private readonly Language _language = InitializeLanguage(provider);
+    private readonly TreeSitter.Language _language = InitializeLanguage(provider);
 
-    private static Language InitializeLanguage(ILanguageProvider provider)
+    private static TreeSitter.Language InitializeLanguage(ILanguageProvider provider)
     {
         if (provider == null) throw new ArgumentNullException(nameof(provider));
 
+        string langId = provider.LanguageId.ToLowerInvariant();
+
         try
         {
-            string libraryName = PlatformHelper.GetPlatformLibraryName(provider.BaseLibraryName);
-            return new Language(libraryName, provider.FunctionName);
+            // Use TreeSitterLanguagePack to download and cache automatically as primary strategy
+            IntPtr langPtrPtr = TslpNative.GetLanguage(langId);
+
+            if (langPtrPtr != IntPtr.Zero)
+            {
+                // Dereference to get TSLanguage*
+                IntPtr langPtr = Marshal.ReadIntPtr(langPtrPtr);
+                if (langPtr != IntPtr.Zero)
+                {
+                    return new TreeSitter.Language(langPtr);
+                }
+            }
+        }
+        catch
+        {
+            // For now, we fall through to the manual load
+        }
+
+        // Fallback: Try to load via TreeSitter.DotNet's standard mechanism
+        // which looks for tree-sitter-{langid} libraries in search paths
+        try
+        {
+            return new TreeSitter.Language(provider.LanguageId);
         }
         catch (Exception ex)
         {
-            throw new InvalidOperationException($"Failed to load Tree-sitter native library for {provider.LanguageId}.", ex);
+            string lastTslpError = TslpNative.GetLastError();
+            throw new InvalidOperationException(
+                $"Failed to load Tree-sitter native library for {provider.LanguageId}. " +
+                $"TSLP attempt for '{langId}' failed with: {lastTslpError}", ex);
         }
     }
 
@@ -51,7 +81,7 @@ public class CodeParser(ILanguageProvider provider)
         return MapToAstNode(tree.RootNode, sourceCode);
     }
 
-    private AstNode MapToAstNode(Node tsNode, string sourceCode)
+    private static AstNode MapToAstNode(Node tsNode, string sourceCode)
     {
         var node = new AstNode
         {
@@ -63,7 +93,7 @@ public class CodeParser(ILanguageProvider provider)
             )
         };
 
-        for (int i = 0; i < tsNode.Children.Count(); i++)
+        for (int i = 0; i < tsNode.Children.Count; i++)
         {
             var tsChild = tsNode.Children.ElementAt(i);
             if (tsChild != null)

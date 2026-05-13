@@ -1,127 +1,60 @@
 using Microsoft.Extensions.Logging;
-using Microsoft.Extensions.Logging.Console;
-using ArchDiver.Core.Pipeline;
-using ArchDiver.Core.Abstractions;
 using ArchDiver.Core.Infrastructure;
-using ArchDiver.Core.Models;
 using ArchDiver.Parser.Infrastructure;
+using ArchDiver.Core.Models;
+using ArchDiver.Core.Abstractions;
+using Serilog;
+using ArchDiver.Cli.Controllers;
+using ArchDiver.Cli.Views;
 
 namespace ArchDiver.Cli;
 
-class Program
+partial class Program
 {
     private static readonly string _configFileName = "archdiver.toml";
     private static readonly string _outputDir = ".archdiver/out";
     private static ILoggerFactory _loggerFactory = null!;
-    private static ILogger<Program> _logger = null!;
     private static ICodeAnalysisEngine _analysisEngine = null!;
     private static readonly IConfigManager _configManager = new TomlConfigManager();
 
-    static void Main(string[] args)
+    public static IConfigManager ConfigManager => _configManager;
+
+
+    public static int Main(string[] args)
     {
         ProjectConfig config = File.Exists(_configFileName)
-            ? _configManager.Load(_configFileName)
-            : _configManager.GetDefault();
-
-        ConfigureLogging(config.Logging.MinimumLevel);
+            ? ConfigManager.Load(_configFileName)
+            : ConfigManager.GetDefault();
+        ConfigureLogging(config);
         _analysisEngine = Bootstrapper.Initialize(_loggerFactory);
-
-        if (args.Length < 1) { PrintUsage(); return; }
-        string command = args[0].ToLower();
-        switch (command)
-        {
-            case "explore": HandleExplore(args, config); break;
-            case "config": HandleConfig(args); break;
-            default: PrintUsage(); break;
-        }
+        var view = new ConsoleViewRenderer();
+        var controllerLogger = _loggerFactory.CreateLogger<CommandController>();
+        var controller = new CommandController(
+            _loggerFactory,
+            controllerLogger,
+            view,
+            _analysisEngine,
+            ConfigManager,
+            _configFileName,
+            _outputDir);
+        return controller.Handle(args);
     }
 
-    static void ConfigureLogging(LogLevel minLevel)
+    static void ConfigureLogging(ProjectConfig config)
     {
+        var serilogLoggerConfiguration = new Serilog.LoggerConfiguration()
+            .MinimumLevel.Is((Serilog.Events.LogEventLevel)config.Logging.MinimumLevel);
+
+        if (!string.IsNullOrWhiteSpace(config.Logging.LogFilePath))
+        {
+            serilogLoggerConfiguration.WriteTo.File(config.Logging.LogFilePath);
+        }
+
+        Serilog.Log.Logger = serilogLoggerConfiguration.CreateLogger();
+
         _loggerFactory = LoggerFactory.Create(builder =>
         {
-            builder.AddConsole();
-            builder.SetMinimumLevel(minLevel);
+            builder.AddSerilog(Serilog.Log.Logger);
         });
-        _logger = _loggerFactory.CreateLogger<Program>();
-    }
-
-    static void PrintUsage()
-    {
-        Console.WriteLine("ArchDiver CLI\nUsage:\n  archdiver <command> [options]\n");
-        Console.WriteLine("Commands:");
-        Console.WriteLine("  explore <path>   Recursively parses supported files.");
-        Console.WriteLine("  config           Shows current configuration.");
-        Console.WriteLine("  config create    Creates a default configuration file.");
-        Console.WriteLine($"\nSupported Languages: {string.Join(", ", _analysisEngine.GetSupportedLanguages())}");
-    }
-
-    static void HandleConfig(string[] args)
-    {
-        if (args.Length > 1 && args[1].ToLower() == "create")
-        {
-            _configManager.Save(_configManager.GetDefault(), _configFileName);
-            _logger.LogInformation("Created default configuration: {ConfigFileName}", _configFileName);
-            return;
-        }
-
-        if (!File.Exists(_configFileName))
-        {
-            _logger.LogWarning("No config file found. Using defaults.");
-            DisplayConfig(_configManager.GetDefault());
-        }
-        else
-        {
-            DisplayConfig(_configManager.Load(_configFileName));
-        }
-    }
-
-    static void DisplayConfig(ProjectConfig config)
-    {
-        Console.WriteLine($"Configuration ({_configFileName}):");
-        Console.WriteLine($"  Log Level: {config.Logging.MinimumLevel}");
-        Console.WriteLine($"  Max Depth: {config.Analysis.MaxDepth}");
-        Console.WriteLine($"  Ignore Patterns: {string.Join(", ", config.Analysis.IgnorePatterns)}");
-    }
-
-    static void HandleExplore(string[] args, ProjectConfig config)
-    {
-        if (args.Length < 2) { _logger.LogError("Missing directory path."); return; }
-
-        string rootPath = Path.GetFullPath(args[1]);
-        if (!Directory.Exists(rootPath)) { _logger.LogError("Directory not found: {RootPath}", rootPath); return; }
-
-        int maxDepth = config.Analysis.MaxDepth;
-        for (int i = 0; i < args.Length; i++)
-        {
-            if (args[i] == "--max-depth" && i + 1 < args.Length && int.TryParse(args[i + 1], out int depth))
-                maxDepth = depth;
-        }
-
-        string outputRoot = Path.Combine(rootPath, _outputDir);
-        if (Directory.Exists(outputRoot)) Directory.Delete(outputRoot, true);
-        Directory.CreateDirectory(outputRoot);
-
-        _logger.LogInformation("Exploring: {RootPath} (Max Depth: {MaxDepth})", rootPath, maxDepth);
-
-        var pipelineLogger = _loggerFactory.CreateLogger<PipelineControlUnit>();
-        var explorerLogger = _loggerFactory.CreateLogger<DirectoryExplorer>();
-
-        var pipeline = new PipelineControlUnit(_analysisEngine, pipelineLogger);
-        var exporter = new TomlExporter();
-
-        var explorer = new DirectoryExplorer(pipeline, explorerLogger, maxDepth, config.Analysis.IgnorePatterns, (filePath, result) =>
-        {
-            string relativePath = Path.GetRelativePath(rootPath, filePath);
-            string? directoryName = Path.GetDirectoryName(relativePath);
-            string fileNameWithoutExtension = Path.GetFileNameWithoutExtension(relativePath);
-
-            string fileOutputDir = Path.Combine(outputRoot, directoryName ?? "");
-
-            exporter.Export(result, fileOutputDir, fileNameWithoutExtension);
-        });
-
-        explorer.Explore(rootPath);
-        _logger.LogInformation("Exploration complete. Results saved in {OutputRoot}", outputRoot);
     }
 }

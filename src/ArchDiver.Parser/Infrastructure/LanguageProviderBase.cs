@@ -1,3 +1,4 @@
+using System.Collections.Generic;
 using System.Collections.ObjectModel;
 using System.Reflection;
 using ArchDiver.Parser.Abstractions;
@@ -28,13 +29,25 @@ public abstract class LanguageProviderBase : ILanguageProvider
 
     protected virtual IReadOnlyDictionary<string, string[]> InitializeNodeBindings()
     {
-        var bindings = new Dictionary<string, string[]>();
+        var bindings = new Dictionary<string, List<string>>();
         var attributes = GetType().GetCustomAttributes<NodeBindingAttribute>();
         foreach (var attr in attributes)
         {
-            bindings[attr.Concept] = attr.NodeTypes;
+            if (!bindings.TryGetValue(attr.Concept, out var types))
+            {
+                types = new List<string>();
+                bindings[attr.Concept] = types;
+            }
+            types.AddRange(attr.NodeTypes);
         }
-        return new ReadOnlyDictionary<string, string[]>(bindings);
+        
+        var result = new Dictionary<string, string[]>();
+        foreach (var kvp in bindings)
+        {
+            result[kvp.Key] = kvp.Value.Distinct().ToArray();
+        }
+
+        return new ReadOnlyDictionary<string, string[]>(result);
     }
 
     public abstract bool CanHandle(string filePath, string content);
