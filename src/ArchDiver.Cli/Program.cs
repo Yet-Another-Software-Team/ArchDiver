@@ -20,7 +20,7 @@ partial class Program
     public static IConfigManager ConfigManager => _configManager;
 
 
-    static void Main(string[] args)
+    public static int Main(string[] args)
     {
         ProjectConfig config = File.Exists(_configFileName)
             ? ConfigManager.Load(_configFileName)
@@ -37,7 +37,7 @@ partial class Program
             ConfigManager,
             _configFileName,
             _outputDir);
-        controller.Handle(args);
+        return controller.Handle(args);
     }
 
     static void ConfigureLogging(ProjectConfig config)

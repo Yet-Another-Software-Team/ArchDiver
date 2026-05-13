@@ -21,31 +21,29 @@ public partial class CommandController(
     private readonly string _configFileName = configFileName;
     private readonly string _outputDir = outputDir;
 
-    public void Handle(string[] args)
+    public int Handle(string[] args)
     {
         var config = LoadConfig();
         if (args.Length < 1)
         {
             _view.ShowUsage(_analysisEngine.GetSupportedLanguages());
-            return;
+            return 0;
         }
 
         string command = args[0].ToLower();
-        switch (command)
+        return command switch
         {
-            case "explore":
-                HandleExplore(args, config);
-                break;
-            case "analyze":
-                HandleAnalyze(args, config);
-                break;
-            case "config":
-                HandleConfig(args, config);
-                break;
-            default:
-                _view.ShowUsage(_analysisEngine.GetSupportedLanguages());
-                break;
-        }
+            "explore" => HandleExplore(args, config),
+            "analyze" => HandleAnalyze(args, config),
+            "config" => HandleConfig(args, config),
+            _ => ShowUsageAndReturn()
+        };
+    }
+
+    private int ShowUsageAndReturn()
+    {
+        _view.ShowUsage(_analysisEngine.GetSupportedLanguages());
+        return 0;
     }
 
 }

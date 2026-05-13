@@ -9,13 +9,13 @@ public partial class CommandController
             ? _configManager.Load(_configFileName)
             : _configManager.GetDefault();
 
-    private void HandleConfig(string[] args, ProjectConfig config)
+    private int HandleConfig(string[] args, ProjectConfig config)
     {
         if (args.Length > 1 && args[1].Equals("create", StringComparison.CurrentCultureIgnoreCase))
         {
             _configManager.Save(_configManager.GetDefault(), _configFileName);
             LogConfigCreated(_logger, _configFileName);
-            return;
+            return 0;
         }
 
         if (!File.Exists(_configFileName))
@@ -27,5 +27,7 @@ public partial class CommandController
         {
             _view.ShowConfig(_configManager.Load(_configFileName), _configFileName);
         }
+
+        return 0;
     }
 }

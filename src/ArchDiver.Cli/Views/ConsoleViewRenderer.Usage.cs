@@ -12,7 +12,10 @@ public partial class ConsoleViewRenderer
         Console.WriteLine("Commands:");
         Console.WriteLine("  explore <path>               Recursively parses supported files.");
         Console.WriteLine("  analyze <path> [model_path]  Runs full pipeline and prints smell predictions. If no model path is specified, uses the built-in model.");
-        Console.WriteLine("                               Pass --show-all to display all predictions, not just those exceeding the threshold.");
+        Console.WriteLine("                               Options:");
+        Console.WriteLine("                                 --show-all    Display all predictions, not just those exceeding the threshold.");
+        Console.WriteLine("                                 --ci          Summarize findings and exit with non-zero code if smells detected.");
+        Console.WriteLine("                                 --max-depth   Override maximum directory search depth.");
         Console.WriteLine("  config                       Shows current configuration.");
         Console.WriteLine("  config create                Creates a default configuration file.");
         Console.WriteLine($"\nSupported Languages: {string.Join(", ", supportedLanguages)}");

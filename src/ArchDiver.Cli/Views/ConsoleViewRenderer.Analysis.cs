@@ -53,6 +53,12 @@ public partial class ConsoleViewRenderer
         AnsiConsole.Write(new Rule());
     }
 
+    public void ShowAnalysisSummary(int scannedFiles, int smellsDetected)
+    {
+        AnsiConsole.MarkupLine("([yellow]{0}[/] file(s) scanned, [yellow]{1}[/] smell(s) detected)",
+            scannedFiles, smellsDetected);
+    }
+
     private static string GetHierarchicalName(Graph graph, Node node)
     {
         var path = new List<string> { node.Name };

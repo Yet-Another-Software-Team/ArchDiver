@@ -8,19 +8,19 @@ namespace ArchDiver.Cli.Controllers;
 
 public partial class CommandController
 {
-    private void HandleExplore(string[] args, ProjectConfig config)
+    private int HandleExplore(string[] args, ProjectConfig config)
     {
         if (args.Length < 2)
         {
             LogMissingDirectory(_logger);
-            return;
+            return 1;
         }
 
         string rootPath = Path.GetFullPath(args[1]);
         if (!Directory.Exists(rootPath))
         {
             LogDirectoryNotFound(_logger, rootPath);
-            return;
+            return 1;
         }
 
         int maxDepth = config.Analysis.MaxDepth;
@@ -68,10 +68,12 @@ public partial class CommandController
         if (explorer.Errors.Any())
         {
             _view.ShowAnalysisFailed(explorer, config);
-            return;
+            return 1;
         }
 
         _view.ShowExplorationComplete(outputRoot);
         LogExplorationComplete(_logger, outputRoot);
+
+        return 0;
     }
 }

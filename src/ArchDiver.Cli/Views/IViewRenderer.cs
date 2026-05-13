@@ -12,5 +12,6 @@ public interface IViewRenderer
     void ShowExplorationComplete(string outputRoot);
     void ShowAnalysisHeader(ProjectConfig config);
     void ShowAnalysisResults(Graph graph, IDictionary<int, float> predictions, ProjectConfig config, bool showAll);
+    void ShowAnalysisSummary(int scannedFiles, int smellsDetected);
     void ShowAnalysisFailed(DirectoryExplorer explorer, ProjectConfig config);
 }
