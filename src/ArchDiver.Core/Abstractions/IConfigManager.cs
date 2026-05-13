@@ -7,4 +7,5 @@ public interface IConfigManager
     ProjectConfig Load(string path);
     void Save(ProjectConfig config, string path);
     ProjectConfig GetDefault();
+    string? FindConfig(string startDir);
 }

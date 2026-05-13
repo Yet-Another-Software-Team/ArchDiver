@@ -22,9 +22,11 @@ partial class Program
 
     public static int Main(string[] args)
     {
-        ProjectConfig config = File.Exists(_configFileName)
-            ? ConfigManager.Load(_configFileName)
+        string? configPath = ConfigManager.FindConfig(Directory.GetCurrentDirectory());
+        ProjectConfig config = configPath != null
+            ? ConfigManager.Load(configPath)
             : ConfigManager.GetDefault();
+            
         ConfigureLogging(config);
         _analysisEngine = Bootstrapper.Initialize(_loggerFactory);
         var view = new ConsoleViewRenderer();
@@ -35,7 +37,7 @@ partial class Program
             view,
             _analysisEngine,
             ConfigManager,
-            _configFileName,
+            configPath ?? _configFileName,
             _outputDir);
         return controller.Handle(args);
     }

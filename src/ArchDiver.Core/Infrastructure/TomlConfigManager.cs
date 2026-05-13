@@ -22,4 +22,19 @@ public class TomlConfigManager : IConfigManager
     }
 
     public ProjectConfig GetDefault() => new();
+
+    public string? FindConfig(string startDir)
+    {
+        var currentDir = new DirectoryInfo(startDir);
+        while (currentDir != null)
+        {
+            var configPath = Path.Combine(currentDir.FullName, "archdiver.toml");
+            if (File.Exists(configPath))
+            {
+                return configPath;
+            }
+            currentDir = currentDir.Parent;
+        }
+        return null;
+    }
 }

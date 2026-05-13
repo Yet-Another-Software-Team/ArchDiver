@@ -17,8 +17,8 @@ public partial class ConsoleViewRenderer
         Console.WriteLine("                                 --ci          Summarize findings and exit with non-zero code if smells detected.");
         Console.WriteLine("                                 --from-toml   Run analysis from pre-parsed TOML artifacts instead of source code.");
         Console.WriteLine("                                 --max-depth   Override maximum directory search depth.");
-        Console.WriteLine("  config                       Shows current configuration.");
-        Console.WriteLine("  config create                Creates a default configuration file.");
+        Console.WriteLine("  config [path]                Shows configuration from nearest archdiver.toml or specified path.");
+        Console.WriteLine("  config create [path]         Creates a default configuration file.");
         Console.WriteLine($"\nSupported Languages: {string.Join(", ", supportedLanguages)}");
     }
 }

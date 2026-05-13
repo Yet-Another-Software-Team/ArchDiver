@@ -58,11 +58,13 @@ archdiver explore <directory_path> [--max-depth <n>]
 ```
 
 ### Configuration
-Manage your `archdiver.toml` configuration.
+Manage your `archdiver.toml` configuration. ArchDiver automatically searches for the nearest `archdiver.toml` by looking in the current directory and parent directories.
+
 ```bash
-archdiver config        # Show current config
-archdiver config create # Create default config
+archdiver config [path]        # Show current config from nearest archdiver.toml (path is optional)
+archdiver config create [path] # Create default config at current or specified path (path is optional)
 ```
+If `[path]` is a directory, `archdiver.toml` will be created inside it.
 
 ## Supported Languages
 

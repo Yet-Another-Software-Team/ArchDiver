@@ -23,7 +23,6 @@ public partial class CommandController(
 
     public int Handle(string[] args)
     {
-        var config = LoadConfig();
         if (args.Length < 1)
         {
             _view.ShowUsage(_analysisEngine.GetSupportedLanguages());
@@ -31,6 +30,12 @@ public partial class CommandController(
         }
 
         string command = args[0].ToLower();
+        string? targetPath = (command == "explore" || command == "analyze") && args.Length > 1
+            ? args[1]
+            : null;
+
+        var config = ResolveConfig(targetPath);
+
         return command switch
         {
             "explore" => HandleExplore(args, config),
