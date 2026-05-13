@@ -28,6 +28,14 @@ public partial class CommandController
         }
     }
 
+    private static void LogPathNotFound(ILogger logger, string path)
+    {
+        if (logger.IsEnabled(LogLevel.Error))
+        {
+            logger.LogError("Path not found: {Path}", path);
+        }
+    }
+
     private static void LogDirectoryNotFound(ILogger logger, string rootPath)
     {
         if (logger.IsEnabled(LogLevel.Error))
