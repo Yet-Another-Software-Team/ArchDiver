@@ -21,6 +21,20 @@ public class CodeParserTests
     }
 
     [Fact]
+    public void NodeBindings_MultipleAttributes_AreMerged()
+    {
+        // Arrange & Act
+        var provider = _registry.GetById("CSharp")!;
+        var bindings = provider.NodeBindings;
+
+        // Assert
+        Assert.Contains("compilation_unit", bindings["Root"]);
+        Assert.Contains("translation_unit", bindings["Root"]);
+        Assert.Contains("method_declaration", bindings["Method"]);
+        Assert.Contains("class_declaration", bindings["Class"]);
+    }
+
+    [Fact]
     public void Parse_ValidCSharp_ReturnsAstWithExpectedRoot()
     {
         // Arrange
@@ -33,7 +47,7 @@ public class CodeParserTests
 
         // Assert
         Assert.NotNull(ast);
-        Assert.Equal("translation_unit", ast.Type); // C# root node in tree-sitter is translation_unit or compilation_unit depending on version, but recent ones use translation_unit or compilation_unit (Tree-sitter c-sharp uses compilation_unit)
+        Assert.Equal("compilation_unit", ast.Type); 
         Assert.NotEmpty(ast.Children);
     }
 
@@ -70,6 +84,36 @@ public class CodeParserTests
         Assert.NotNull(ast);
         Assert.Equal("module", ast.Type); // Python root node is usually module
         Assert.NotEmpty(ast.Children);
+    }
+
+    [Fact]
+    public void Parse_CSharpClass_HasFieldNameForName()
+    {
+        // Arrange
+        var provider = _registry.GetById("CSharp")!;
+        var parser = new CodeParser(provider);
+        var sourceCode = "class MyClass {}";
+
+        // Act
+        var ast = parser.Parse(sourceCode);
+
+        // Assert
+        var classNode = FindNode(ast, "class_declaration");
+        Assert.NotNull(classNode);
+        var nameNode = classNode.Children.FirstOrDefault(c => c.FieldName == "name");
+        Assert.NotNull(nameNode);
+        Assert.Equal("MyClass", nameNode.Text);
+    }
+
+    private AstNode? FindNode(AstNode node, string type)
+    {
+        if (node.Type == type) return node;
+        foreach (var child in node.Children)
+        {
+            var found = FindNode(child, type);
+            if (found != null) return found;
+        }
+        return null;
     }
 
     [Fact]

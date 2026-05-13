@@ -3,6 +3,7 @@ using ArchDiver.Parser.Infrastructure;
 
 namespace ArchDiver.Parser.Languages;
 
+[NodeBinding("Root", "compilation_unit", "translation_unit")]
 [NodeBinding("Method", "method_declaration", "constructor_declaration", "destructor_declaration")]
 [NodeBinding("Class", "class_declaration", "struct_declaration", "record_declaration", "interface_declaration", "enum_declaration")]
 [NodeBinding("Field", "variable_declarator", "property_declaration", "field_declaration")]

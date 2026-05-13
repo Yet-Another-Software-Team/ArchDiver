@@ -13,7 +13,7 @@ internal static partial class TslpNative
     [UnmanagedFunctionPointer(CallingConvention.Cdecl)]
     public delegate IntPtr LanguageFunction();
 
-    [DllImport(LibName, EntryPoint = "ts_pack_get_language", CharSet = CharSet.Unicode)]
+    [DllImport(LibName, EntryPoint = "ts_pack_get_language", CharSet = CharSet.Ansi)]
     public static extern IntPtr GetLanguage(string name);
 
     [DllImport(LibName, EntryPoint = "ts_pack_last_error_code")]
