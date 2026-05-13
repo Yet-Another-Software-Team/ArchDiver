@@ -21,13 +21,11 @@ public class CodeParser(ILanguageProvider provider)
     {
         if (provider == null) throw new ArgumentNullException(nameof(provider));
 
+        string langId = provider.LanguageId.ToLowerInvariant();
+
         try
         {
             // Use TreeSitterLanguagePack to download and cache automatically as primary strategy
-            string langId = provider.LanguageId.ToLowerInvariant().Replace("-", "_");
-            if (langId == "csharp") langId = "c_sharp";
-
-            // Trigger download and get the language pointer (returns TSLanguage**)
             IntPtr langPtrPtr = TslpNative.GetLanguage(langId);
 
             if (langPtrPtr != IntPtr.Zero)
@@ -42,25 +40,21 @@ public class CodeParser(ILanguageProvider provider)
         }
         catch
         {
-            // Fallback: Try to load as a built-in language from TreeSitter.DotNet
-            try
-            {
-                return new TreeSitter.Language(provider.LanguageId);
-            }
-            catch (Exception ex)
-            {
-                throw new InvalidOperationException($"Failed to load or download Tree-sitter native library for {provider.LanguageId}.", ex);
-            }
+            // For now, we fall through to the manual load
         }
 
-        // Final fallback if both failed
+        // Fallback: Try to load via TreeSitter.DotNet's standard mechanism
+        // which looks for tree-sitter-{langid} libraries in search paths
         try
         {
             return new TreeSitter.Language(provider.LanguageId);
         }
         catch (Exception ex)
         {
-            throw new InvalidOperationException($"Failed to load or download Tree-sitter native library for {provider.LanguageId}. Last TSLP Error: {TslpNative.GetLastError()}", ex);
+            string lastTslpError = TslpNative.GetLastError();
+            throw new InvalidOperationException(
+                $"Failed to load Tree-sitter native library for {provider.LanguageId}. " +
+                $"TSLP attempt for '{langId}' failed with: {lastTslpError}", ex);
         }
     }
 

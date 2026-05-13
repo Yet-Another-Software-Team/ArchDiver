@@ -35,27 +35,4 @@ internal static partial class TslpNative
         string? msg = Marshal.PtrToStringUTF8(ptr);
         return msg ?? "Unknown error";
     }
-
-    private static bool _resolverRegistered = false;
-
-    public static void RegisterResolver()
-    {
-        if (_resolverRegistered) return;
-        System.Reflection.Assembly tsAssembly = typeof(TreeSitter.Parser).Assembly;
-        NativeLibrary.SetDllImportResolver(tsAssembly, ResolveTslp);
-        _resolverRegistered = true;
-    }
-
-    private static IntPtr ResolveTslp(string libraryName, System.Reflection.Assembly assembly, DllImportSearchPath? searchPath)
-    {
-        if (libraryName == "tree-sitter")
-        {
-            // Load the TSLP core instead
-            if (NativeLibrary.TryLoad(LibName, assembly, searchPath, out IntPtr handle))
-            {
-                return handle;
-            }
-        }
-        return IntPtr.Zero;
-    }
 }
