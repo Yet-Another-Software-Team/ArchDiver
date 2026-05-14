@@ -91,6 +91,13 @@ public class GraphBuilder
                     Type = EdgeType.ComponentContainsClass
                 });
 
+                graph.Edges.Add(new Edge
+                {
+                    SourceId = currClassId,
+                    TargetId = currCompId,
+                    Type = EdgeType.ClassContainedByComponent
+                });
+
                 var imports = new HashSet<string>();
                 if (tomlTable.TryGetValue("imports", out var importsObj) && importsObj is TomlArray importsArray)
                 {
