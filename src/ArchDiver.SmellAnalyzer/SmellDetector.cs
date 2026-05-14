@@ -37,7 +37,7 @@ public class SmellDetector : IDisposable
     {
         var assembly = Assembly.GetExecutingAssembly();
         string? resourceName = assembly.GetManifestResourceNames().FirstOrDefault(n => n.EndsWith(resourceNameSuffix));
-        
+
         if (resourceName == null)
             throw new InvalidOperationException($"Resource ending with '{resourceNameSuffix}' not found. Available resources: {string.Join(", ", assembly.GetManifestResourceNames())}");
 
@@ -85,10 +85,12 @@ public class SmellDetector : IDisposable
 
         var edgesCC = graph.Edges.Where(e => e.Type == EdgeType.ComponentContainsComponent).ToList();
         var edgesCL = graph.Edges.Where(e => e.Type == EdgeType.ComponentContainsClass).ToList();
+        var edgesCBC = graph.Edges.Where(e => e.Type == EdgeType.ClassContainedByComponent).ToList();
         var edgesLL = graph.Edges.Where(e => e.Type == EdgeType.ClassImportsClass).ToList();
 
         var edgeCC = new DenseTensor<long>(new[] { 2, Math.Max(1, edgesCC.Count) });
         var edgeCL = new DenseTensor<long>(new[] { 2, Math.Max(1, edgesCL.Count) });
+        var edgeCBC = new DenseTensor<long>(new[] { 2, Math.Max(1, edgesCBC.Count) });
         var edgeLL = new DenseTensor<long>(new[] { 2, Math.Max(1, edgesLL.Count) });
 
         for (int i = 0; i < edgesCC.Count; i++)
@@ -109,6 +111,15 @@ public class SmellDetector : IDisposable
             }
         }
 
+        for (int i = 0; i < edgesCBC.Count; i++)
+        {
+            if (classIdToIndex.TryGetValue(edgesCBC[i].SourceId, out int srcIdx) && compIdToIndex.TryGetValue(edgesCBC[i].TargetId, out int dstIdx))
+            {
+                edgeCBC[0, i] = srcIdx;
+                edgeCBC[1, i] = dstIdx;
+            }
+        }
+
         for (int i = 0; i < edgesLL.Count; i++)
         {
             if (classIdToIndex.TryGetValue(edgesLL[i].SourceId, out int srcIdx) && classIdToIndex.TryGetValue(edgesLL[i].TargetId, out int dstIdx))
@@ -124,6 +135,7 @@ public class SmellDetector : IDisposable
             NamedOnnxValue.CreateFromTensor("x_comp", xComp),
             NamedOnnxValue.CreateFromTensor("edge_cc", edgeCC),
             NamedOnnxValue.CreateFromTensor("edge_cl", edgeCL),
+            NamedOnnxValue.CreateFromTensor("edge_cbc", edgeCBC),
             NamedOnnxValue.CreateFromTensor("edge_ll", edgeLL)
         };
 
