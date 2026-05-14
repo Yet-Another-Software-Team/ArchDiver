@@ -33,17 +33,12 @@ public class SmellDetector : IDisposable
         _session = new InferenceSession(modelPath);
     }
 
-    private void ExtractResource(string resourceNameSuffix, string outputPath)
+    private static void ExtractResource(string resourceNameSuffix, string outputPath)
     {
         var assembly = Assembly.GetExecutingAssembly();
-        string? resourceName = assembly.GetManifestResourceNames().FirstOrDefault(n => n.EndsWith(resourceNameSuffix));
+        string? resourceName = assembly.GetManifestResourceNames().FirstOrDefault(n => n.EndsWith(resourceNameSuffix)) ?? throw new InvalidOperationException($"Resource ending with '{resourceNameSuffix}' not found. Available resources: {string.Join(", ", assembly.GetManifestResourceNames())}");
 
-        if (resourceName == null)
-            throw new InvalidOperationException($"Resource ending with '{resourceNameSuffix}' not found. Available resources: {string.Join(", ", assembly.GetManifestResourceNames())}");
-
-        using Stream? stream = assembly.GetManifestResourceStream(resourceName);
-        if (stream == null)
-            throw new InvalidOperationException($"Failed to load resource '{resourceName}'.");
+        using Stream? stream = assembly.GetManifestResourceStream(resourceName) ?? throw new InvalidOperationException($"Failed to load resource '{resourceName}'.");
 
         using var fileStream = File.Create(outputPath);
         stream.CopyTo(fileStream);
@@ -56,7 +51,7 @@ public class SmellDetector : IDisposable
     public Dictionary<int, float> AnalyzeGraph(Graph graph)
     {
         if (graph == null || graph.Nodes.Count == 0)
-            return new Dictionary<int, float>();
+            return [];
 
         var classNodes = graph.Nodes.Where(n => n.Type == NodeType.Class).ToList();
         var compNodes = graph.Nodes.Where(n => n.Type == NodeType.Component).ToList();
