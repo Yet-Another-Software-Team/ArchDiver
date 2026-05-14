@@ -78,15 +78,20 @@ public class SmellDetector : IDisposable
                 xComp[i, j] = (float)compNodes[i].Features[j];
         }
 
+        // Edge sets (Graph edges are expressed in terms of Node IDs; we remap them to per-type 0..N-1 indices).
         var edgesCC = graph.Edges.Where(e => e.Type == EdgeType.ComponentContainsComponent).ToList();
         var edgesCL = graph.Edges.Where(e => e.Type == EdgeType.ComponentContainsClass).ToList();
-        var edgesCBC = graph.Edges.Where(e => e.Type == EdgeType.ClassContainedByComponent).ToList();
-        var edgesLL = graph.Edges.Where(e => e.Type == EdgeType.ClassImportsClass).ToList();
+        var edgesClassToComp = graph.Edges.Where(e => e.Type == EdgeType.ClassContainedByComponent).ToList();
+        var edgesClassToClass = graph.Edges.Where(e => e.Type == EdgeType.ClassImportsClass).ToList();
 
+        // - edge_cc  : Component -> Component
+        // - edge_cl  : Component -> Class
+        // - edge_ll  : Class     -> Component
+        // - edge_cbc : Class     -> Class
         var edgeCC = new DenseTensor<long>(new[] { 2, Math.Max(1, edgesCC.Count) });
         var edgeCL = new DenseTensor<long>(new[] { 2, Math.Max(1, edgesCL.Count) });
-        var edgeCBC = new DenseTensor<long>(new[] { 2, Math.Max(1, edgesCBC.Count) });
-        var edgeLL = new DenseTensor<long>(new[] { 2, Math.Max(1, edgesLL.Count) });
+        var edgeLL = new DenseTensor<long>(new[] { 2, Math.Max(1, edgesClassToComp.Count) });
+        var edgeCBC = new DenseTensor<long>(new[] { 2, Math.Max(1, edgesClassToClass.Count) });
 
         for (int i = 0; i < edgesCC.Count; i++)
         {
@@ -106,21 +111,23 @@ public class SmellDetector : IDisposable
             }
         }
 
-        for (int i = 0; i < edgesCBC.Count; i++)
+        // edge_ll: Class -> Component
+        for (int i = 0; i < edgesClassToComp.Count; i++)
         {
-            if (classIdToIndex.TryGetValue(edgesCBC[i].SourceId, out int srcIdx) && compIdToIndex.TryGetValue(edgesCBC[i].TargetId, out int dstIdx))
-            {
-                edgeCBC[0, i] = srcIdx;
-                edgeCBC[1, i] = dstIdx;
-            }
-        }
-
-        for (int i = 0; i < edgesLL.Count; i++)
-        {
-            if (classIdToIndex.TryGetValue(edgesLL[i].SourceId, out int srcIdx) && classIdToIndex.TryGetValue(edgesLL[i].TargetId, out int dstIdx))
+            if (classIdToIndex.TryGetValue(edgesClassToComp[i].SourceId, out int srcIdx) && compIdToIndex.TryGetValue(edgesClassToComp[i].TargetId, out int dstIdx))
             {
                 edgeLL[0, i] = srcIdx;
                 edgeLL[1, i] = dstIdx;
+            }
+        }
+
+        // edge_cbc: Class -> Class
+        for (int i = 0; i < edgesClassToClass.Count; i++)
+        {
+            if (classIdToIndex.TryGetValue(edgesClassToClass[i].SourceId, out int srcIdx) && classIdToIndex.TryGetValue(edgesClassToClass[i].TargetId, out int dstIdx))
+            {
+                edgeCBC[0, i] = srcIdx;
+                edgeCBC[1, i] = dstIdx;
             }
         }
 
@@ -140,12 +147,30 @@ public class SmellDetector : IDisposable
 
         var predictions = new Dictionary<int, float>();
 
-        int maxOutputs = Math.Min(classNodes.Count, outputTensor.Dimensions[0]);
+        // Model output is `logits: [num_components, 2]` (binary classification logits per Component node).
+        int maxOutputs = Math.Min(compNodes.Count, outputTensor.Dimensions[0]);
         for (int i = 0; i < maxOutputs; i++)
         {
-            var nodeId = classNodes[i].Id;
-            float logit = outputTensor.Dimensions.Length > 1 ? outputTensor[i, 0] : outputTensor[i];
-            float score = 1.0f / (1.0f + (float)Math.Exp(-logit));
+            var nodeId = compNodes[i].Id;
+
+            float score;
+            if (outputTensor.Dimensions.Length > 1 && outputTensor.Dimensions[1] >= 2)
+            {
+                // Softmax over 2 logits; take the positive class probability.
+                float a = outputTensor[i, 0];
+                float b = outputTensor[i, 1];
+                float m = Math.Max(a, b);
+                float ea = (float)Math.Exp(a - m);
+                float eb = (float)Math.Exp(b - m);
+                score = eb / (ea + eb);
+            }
+            else
+            {
+                // Fallback: treat as a single logit.
+                float logit = outputTensor.Dimensions.Length > 1 ? outputTensor[i, 0] : outputTensor[i];
+                score = 1.0f / (1.0f + (float)Math.Exp(-logit));
+            }
+
             predictions[nodeId] = score;
         }
 
