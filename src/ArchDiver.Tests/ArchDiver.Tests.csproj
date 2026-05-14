@@ -24,6 +24,9 @@
   <ItemGroup>
     <ProjectReference Include="..\ArchDiver.Core\ArchDiver.Core.csproj" />
     <ProjectReference Include="..\ArchDiver.Parser\ArchDiver.Parser.csproj" />
+    <ProjectReference Include="..\ArchDiver.SmellAnalyzer\ArchDiver.SmellAnalyzer.csproj" />
+    <ProjectReference Include="..\ArchDiver.Shared\ArchDiver.Shared.csproj" />
+    <ProjectReference Include="..\ArchDiver.GraphConstruction\ArchDiver.GraphConstruction.csproj" />
   </ItemGroup>
 
 </Project>

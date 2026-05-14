@@ -86,12 +86,12 @@ public class SmellDetector : IDisposable
 
         // - edge_cc  : Component -> Component
         // - edge_cl  : Component -> Class
-        // - edge_ll  : Class     -> Component
-        // - edge_cbc : Class     -> Class
+        // - edge_ll  : Class     -> Class
+        // - edge_cbc : Class     -> Component
         var edgeCC = new DenseTensor<long>(new[] { 2, Math.Max(1, edgesCC.Count) });
         var edgeCL = new DenseTensor<long>(new[] { 2, Math.Max(1, edgesCL.Count) });
-        var edgeLL = new DenseTensor<long>(new[] { 2, Math.Max(1, edgesClassToComp.Count) });
-        var edgeCBC = new DenseTensor<long>(new[] { 2, Math.Max(1, edgesClassToClass.Count) });
+        var edgeLL = new DenseTensor<long>(new[] { 2, Math.Max(1, edgesClassToClass.Count) });
+        var edgeCBC = new DenseTensor<long>(new[] { 2, Math.Max(1, edgesClassToComp.Count) });
 
         for (int i = 0; i < edgesCC.Count; i++)
         {
@@ -111,20 +111,20 @@ public class SmellDetector : IDisposable
             }
         }
 
-        // edge_ll: Class -> Component
-        for (int i = 0; i < edgesClassToComp.Count; i++)
+        // edge_ll: Class -> Class
+        for (int i = 0; i < edgesClassToClass.Count; i++)
         {
-            if (classIdToIndex.TryGetValue(edgesClassToComp[i].SourceId, out int srcIdx) && compIdToIndex.TryGetValue(edgesClassToComp[i].TargetId, out int dstIdx))
+            if (classIdToIndex.TryGetValue(edgesClassToClass[i].SourceId, out int srcIdx) && classIdToIndex.TryGetValue(edgesClassToClass[i].TargetId, out int dstIdx))
             {
                 edgeLL[0, i] = srcIdx;
                 edgeLL[1, i] = dstIdx;
             }
         }
 
-        // edge_cbc: Class -> Class
-        for (int i = 0; i < edgesClassToClass.Count; i++)
+        // edge_cbc: Class -> Component
+        for (int i = 0; i < edgesClassToComp.Count; i++)
         {
-            if (classIdToIndex.TryGetValue(edgesClassToClass[i].SourceId, out int srcIdx) && classIdToIndex.TryGetValue(edgesClassToClass[i].TargetId, out int dstIdx))
+            if (classIdToIndex.TryGetValue(edgesClassToComp[i].SourceId, out int srcIdx) && compIdToIndex.TryGetValue(edgesClassToComp[i].TargetId, out int dstIdx))
             {
                 edgeCBC[0, i] = srcIdx;
                 edgeCBC[1, i] = dstIdx;
