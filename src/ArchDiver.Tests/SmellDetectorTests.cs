@@ -9,13 +9,13 @@ namespace ArchDiver.Tests;
 public class SmellDetectorTests
 {
     [Fact]
-    public void AnalyzeGraph_WithMoreComponentsThanClasses_DoesNotThrow()
+    public void AnalyzeGraph_WithAllEdgeTypes_ReturnsPredictions()
     {
         // Arrange
         var graph = new Graph();
         
-        // Add 10 classes (Indices 0-9)
-        for (int i = 0; i < 10; i++)
+        // Add 5 classes (Ids 0-4)
+        for (int i = 0; i < 5; i++)
         {
             graph.Nodes.Add(new Node
             {
@@ -25,8 +25,8 @@ public class SmellDetectorTests
             });
         }
         
-        // Add 20 components (Indices 10-29)
-        for (int i = 10; i < 30; i++)
+        // Add 5 components (Ids 5-9)
+        for (int i = 5; i < 10; i++)
         {
             graph.Nodes.Add(new Node
             {
@@ -36,21 +36,27 @@ public class SmellDetectorTests
             });
         }
         
-        // Add a ClassContainedByComponent edge
-        // Currently mapped to edge_ll (which model likely thinks is L->L)
-        // SourceId = 0 (Class), TargetId = 29 (Component)
-        graph.Edges.Add(new Edge
-        {
-            SourceId = 0,
-            TargetId = 29,
-            Type = EdgeType.ClassContainedByComponent
-        });
+        // edge_cc: Component -> Component (Id 5 -> Id 6)
+        graph.Edges.Add(new Edge { SourceId = 5, TargetId = 6, Type = EdgeType.ComponentContainsComponent });
+
+        // edge_cl: Component -> Class (Id 5 -> Id 0)
+        graph.Edges.Add(new Edge { SourceId = 5, TargetId = 0, Type = EdgeType.ComponentContainsClass });
+
+        // edge_cbc: Class -> Component (Id 1 -> Id 7)
+        graph.Edges.Add(new Edge { SourceId = 1, TargetId = 7, Type = EdgeType.ClassContainedByComponent });
+
+        // edge_ll: Class -> Class (Id 2 -> Id 3)
+        graph.Edges.Add(new Edge { SourceId = 2, TargetId = 3, Type = EdgeType.ClassImportsClass });
 
         using var detector = new SmellDetector();
 
-        // Act & Assert
-        // This is expected to throw before the fix
-        var exception = Record.Exception(() => detector.AnalyzeGraph(graph));
-        Assert.Null(exception);
+        // Act
+        var predictions = detector.AnalyzeGraph(graph);
+
+        // Assert
+        Assert.NotNull(predictions);
+        Assert.Equal(5, predictions.Count);
+        Assert.True(predictions.ContainsKey(5));
+        Assert.True(predictions.ContainsKey(7));
     }
 }
